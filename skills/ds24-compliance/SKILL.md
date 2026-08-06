@@ -54,6 +54,32 @@ table is added.
 covered by an access request even though the app never shows it to them. Hiding
 it in the UI is a decision about tone, not an exemption.
 
+**If members can see or reach each other, two more things go on the list**, and
+neither is obvious from a table diagram:
+
+- **Content members wrote themselves** — a profile, a post in a shared space, a
+  private message. The app now holds text one person wrote for another to read.
+  It goes into the access request and it has to be reachable by an erasure
+  request, and the honest way to do the second is: empty the words, keep the
+  row so the conversation around it still reads, and say so in the policy. A
+  reply to a deleted message must not become an answer to nothing.
+- **⚠️ Participation itself can be purchase information.** A member list for a
+  paid space is a list of who bought it — and for a health, finance or coaching
+  product that is close to special-category data (GDPR Art. 9). The safe design
+  is to have no roster at all: no member list, no member count, no "who is
+  here". Somebody becomes visible by posting, which is a thing they chose to
+  do. If you build a member list anyway, say so in the privacy policy and read
+  Art. 9 first.
+
+**And if you build private messages, decide who can read them before you build
+them, not after.** "Only the two participants" is a promise the code has to
+keep: every query that reads a message carries the reader's own id, there is no
+admin view, and a support session that can sign in as a member does not get one
+either — reading somebody's mail changes nothing and leaves no trace, so it
+cannot be made accountable by logging it. The exceptions worth allowing are a
+subject access request (answered by hand, for a request that was made) and a
+participant's own report, bounded to what they chose to attach.
+
 ## Step 2 — the imprint
 
 Under German DDG § 5 (and its equivalents elsewhere), a commercial site needs a
