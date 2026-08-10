@@ -110,13 +110,27 @@ ships is worse than none: it is visibly false information about who is selling.
 ## Step 3 — probably no cookie banner, and that is not laziness
 
 **A purchase does not need consent.** It runs on GDPR Art. 6(1)(b) — performing
-a contract — not on permission. And if the only things stored on the device are
-the session, the language and the theme, those are strictly necessary under
-§ 25 TDDDG and its equivalents.
+a contract — not on permission. And the things a paid app normally puts on a
+device — the session, the language, the theme, a "do not show me this again"
+that the customer clicked themselves — are covered without asking: either
+strictly necessary, or the direct result of somebody operating a switch.
 
 So: **do not add a cookie banner to an app that sets no non-essential cookies.**
 It asks for permission you neither need nor use, and it trains people to click
 past the one that will matter later.
+
+⚠️ **The rule is about the DEVICE, not about cookies.** § 25 TDDDG and its
+equivalents cover `localStorage`, `sessionStorage`, IndexedDB and device
+fingerprints in exactly the same words — so "we do not use cookies, we use
+localStorage" is not an exemption, it is the same act with a different API. It
+is worth saying because it is the shortcut that gets taken: a preference saved
+without asking is fine when the user set it, and analytics saved without asking
+is a violation whichever storage it lands in.
+
+**Keep one written list of everything your app puts on a device**, with a line
+each saying why it needs no consent. It is what the privacy policy is written
+from, and it is the thing that silently stops being true — every new feature
+that remembers something is a new entry, and nobody notices the fourth one.
 
 **When something genuinely does need consent** — an analytics tag, a marketing
 mail, an embedded third-party widget — then:
