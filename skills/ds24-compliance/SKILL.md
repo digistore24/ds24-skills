@@ -138,7 +138,10 @@ mail, an embedded third-party widget — then:
 - declare the **purpose**, separately per purpose
 - record **who consented, to what wording, when** — and store a **version of
   the wording**, because changing the text means everyone consented to something
-  else
+  else. Then **read that version back**: a consent recorded against an older
+  wording counts as absent and the question is asked again. Storing the version
+  and ignoring it at the point where you check is the failure that looks
+  compliant in the table and is not in the product
 - make the record **append-only**. A withdrawal is a new row, never an edit: you
   have to be able to *demonstrate* consent (Art. 7(1)), and a row you overwrote
   demonstrates nothing
@@ -156,6 +159,23 @@ speaks**. Not in the terms. Where the conversation happens.
 
 Write it as a rule rather than a one-off: *anything here that talks to a person
 as a machine says so*. Whatever AI feature gets added next inherits it.
+
+**Make that rule a LIST, and have something walk it.** One place naming every
+surface where a machine talks to a person, and one check that fails when a
+surface on the list has no notice. A rule nobody can run is a rule that holds
+until the second AI feature ships. Two things about the list:
+
+- **Whatever adds a surface adds its own entry.** An optional feature, a
+  plug-in, a second area of the app — the central list cannot enumerate
+  something that is not switched on, so a part of the app that brings its own AI
+  brings its own entry, and the check walks every list there is. A surface
+  nobody registered is exactly the one that goes live without a notice.
+- **The notice is not conditional.** It renders for everybody, every time —
+  never behind a preference, a role, a plan, or a "we already told them once"
+  flag. The obligation attaches to the interaction, and a returning customer is
+  interacting again; a notice that can be switched off is one click away from an
+  app that discloses nothing, and afterwards you cannot show which customers
+  ever saw it.
 
 **An AI that reads what the user PRODUCED owes the notice earlier, and owes a
 different sentence.** A support chat is easy: the interaction is a question

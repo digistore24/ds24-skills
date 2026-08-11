@@ -38,6 +38,13 @@ token_ledger     member_id, delta, reason, note, created_at, order_id
 A balance you can only get to by adding up rows is a balance you can defend when
 a customer disputes it; one you overwrote is not.
 
+**`reason` and `note` are labels, not content.** The ledger is part of what a
+subject access request hands back, so a note says *what kind of action was
+charged* — "report generation" — and never what the customer typed into it.
+Their prompt, their draft, their question in a ledger row makes it a second,
+unmanaged store of personal data, in the one table whose rows you can never
+delete. See **`ds24-compliance`**.
+
 ## Step 2 — buying credits
 
 A credit package is a Digistore24 product like any other (see
@@ -69,7 +76,7 @@ front gives the result away for free, because by the time the deduction fails
 the expensive part has already run. **That is the mistake that actually gets
 made.**
 
-Four rules around it:
+Five rules around it:
 
 - **The charge function must not take a member id.** The account charged is
   always the caller's own, from the session. An id read out of a request body is
@@ -84,6 +91,12 @@ Four rules around it:
 - **It is not idempotent.** Two submissions charge twice — there is no key to
   deduplicate on. Disable the button while the request is in flight, and never
   build a blind retry around it.
+- **Nothing about the app's own configuration may refuse a spend.** A setting
+  that says which model this app sells — a "credits enabled" flag, a pricing
+  mode, a feature switch — belongs in front of the *buying* and in the UI, never
+  in front of the charge. Stop selling credits and every customer still holding a
+  paid balance is entitled to spend it; a spend gated on that switch strands
+  money you have already taken.
 
 ## Step 4 — automatic top-up
 
