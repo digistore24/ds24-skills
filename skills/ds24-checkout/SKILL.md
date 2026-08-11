@@ -65,6 +65,30 @@ One row per key means the German and the English URL evict each other on every
 page view and, in between, the cache serves one language's checkout page to the
 other language's buyer. `"<offerKey>:<language>"` is enough.
 
+🚨 **And never cache a URL that carries a buyer's identity.** Step 2 puts the
+signed-in member's id into `tracking[custom]`, and a cache keyed on the offer has
+no member dimension — so the first signed-in buyer's identity is served to
+everybody who opens that page afterwards, and every one of *their* payments
+arrives attributed to that first member. Nothing fails while it happens: the page
+renders, the checkout opens, the money moves.
+
+So a pricing page has **two paths**, and they are not two versions of one:
+
+- **Signed out → the shared cached URL.** No identity in it, safe for everyone,
+  no round trip to Digistore24 while the page renders.
+- **Signed in → a URL built at click time**, with that member's identity in it,
+  used once and **never written to the cache**.
+
+Decide which by the **content** of the tracking field, not by whether it is set:
+a marker naming the *package* is shareable, one naming a *person* is not. Asking
+merely "is tracking set" turns every card into a live API call on every page
+view, which is what the cache existed to prevent.
+
+**And when the call fails, the page still has to render.** Digistore24 being slow
+or a key being wrong must produce a disabled button with a reason ("checkout
+unavailable"), never a thrown error on the pricing page and never a dead link.
+Return the failure to the caller instead of raising it.
+
 **That URL is not finished yet in a development environment.** Until the
 product is marketplace-approved nobody can buy through it at all, and the way
 to unlock a test purchase without touching your browser is to append the
@@ -79,27 +103,61 @@ The single most common failure in a Digistore24 integration is a payment that
 arrives and cannot be matched to an account. Somebody paid, the app has no idea
 who, and support has to do it by hand.
 
-Send an identifier in the tracking field. It comes back in the IPN as
-`custom`:
+Send an identifier in the tracking field. Digistore24 stores it on the purchase
+and hands it back on **every** later event for that order — the renewal a year
+on, the refund, the chargeback. It arrives in the IPN as `custom`:
 
 ```
-tracking[custom] = m:<member id>:t:<a short random token stored on that member>
+tracking[custom] = m:<member id>;t:<a short random token stored on that member>
 ```
+
+**The field is one opaque string that is entirely yours**, so give it a layout you
+can extend: `;`-separated `key:value` pairs, and a reader that **ignores keys it
+does not know** rather than failing on them. You will want to carry a second id
+through later (which package, which kind of purchase, an intent the buyer
+expressed at checkout), and by then there are live purchases holding the old
+value. A new id is then a new pair; a second *format* is a migration you cannot
+do, because the values already sitting at Digistore24 cannot be rewritten.
 
 **Two things about that token.** It corroborates the member id, so a guessed or
 edited id alone never claims somebody else's purchase — and it is **not a
 credential**: it never authenticates a session, it only says "this id was not
-invented by the person typing the URL".
+invented by the person typing the URL". Both halves must be present and
+well-formed or the value names nobody: half an identity is not a weaker identity.
 
-At the other end, in the IPN handler, attribute in this order:
+At the other end, in the IPN handler, attribute in this order — and the order is
+a security rule, not a preference:
 
-1. the identifier from `custom`, if the token matches → certain.
-2. otherwise the buyer's email against your accounts → likely.
-3. otherwise **store the order unattributed** and attach it when that address
+1. **The identifier from `custom`, token matching → authenticated.** Your app
+   wrote this value, Digistore24 stored it server-side, and the buyer never had
+   a copy they could edit.
+2. **Otherwise the buyer's e-mail against your accounts → unauthenticated.**
+   That address was typed into a Digistore24 form by whoever was paying, and
+   **Digistore24 does not verify that they control it**. It is usually right and
+   it is never proof.
+3. **Otherwise store the order unattributed** and attach it when that address
    first signs in.
 
-Never guess. An unattributed order is a support ticket; a wrongly attributed one
-is a customer seeing somebody else's purchase.
+Two refusals are what make step 2 safe to have at all:
+
+- 🚨 **An address matching more than one account is refused, not resolved to the
+  first row.** Ask for at most two matches and treat "two" as *cannot tell*. The
+  query that returns a list and takes `[0]` is the exact shape of this bug, and
+  what it does is hand one customer another customer's purchase. Unattributed is
+  the correct outcome; guessing is not a fallback.
+- **Attribution only ever grants — it never moves and never revokes.** An e-mail
+  match may attach an order that belongs to nobody yet. It may not re-point an
+  order that is already attributed, and no attribution failure may end access
+  that exists. That one-directionality is the whole reason an unauthenticated
+  path is tolerable.
+
+And anything that authorises an **unattended** act later — charging a stored
+payment method, arming an automatic top-up (**`ds24-tokens`**) — accepts path 1
+only. A path-2 match is a good guess about who bought something; it is not
+permission to charge a card.
+
+An unattributed order is a support ticket. A wrongly attributed one is a customer
+looking at somebody else's purchase, and it is the more expensive of the two.
 
 ## Step 3 — a purchase without an account must still work
 

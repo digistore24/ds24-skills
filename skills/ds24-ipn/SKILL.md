@@ -138,6 +138,15 @@ Write these down in the app's own notes, because they are invisible in review:
   and every English purchase falls into the rule directly above: a paying
   customer, correctly recorded, granted nothing. Look the payload's `product_id`
   up across **all** ids of all offers, and resolve them to the same product key.
+- **Whose payment this is has an ORDER, and it is decided here.** The identifier
+  your checkout put in `tracking[custom]` first — that one is authenticated. The
+  buyer's e-mail only after it, as an **unauthenticated** guess: Digistore24 does
+  not verify the address the buyer typed. And an address matching **more than one
+  account is refused**, never resolved to the first row. Attribution grants and
+  never revokes, which is the only reason the e-mail path is tolerable at all.
+  The full order, its refusals and what may not be authorised by an e-mail match
+  are Step 2 of **`ds24-checkout`** — read it before writing this part, because
+  every failure here looks like a working endpoint.
 
 ## Step 5 — prove it
 

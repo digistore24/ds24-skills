@@ -45,6 +45,12 @@ The user creates it themselves in their Digistore24 account under
 *Settings → API keys*. Ask for it, tell them where to put it, and do not try to
 scrape it out of a browser session.
 
+⚠️ **Tell them to give it WRITE permission** (Digistore24 calls it *writable*).
+A key is scoped when it is created, and a read-only one reads products perfectly
+and then fails on the two calls the app cannot do without: creating the products
+and creating a checkout URL. Say it while they are on that screen — going back to
+widen a key afterwards means creating a new one and replacing it everywhere.
+
 ## Step 2 — one price list, in your app
 
 **Keep the plans in one file in your project** — key, display name, price in
