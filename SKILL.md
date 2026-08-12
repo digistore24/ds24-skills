@@ -18,7 +18,7 @@ them.
 
 ## Step 1 — is this copy current?
 
-Fetch `https://raw.githubusercontent.com/digistore-io/ds24-skills/main/VERSION`
+Fetch `https://raw.githubusercontent.com/digistore24/ds24-skills/main/VERSION`
 and compare it with the `VERSION` file next to this one. Skills imported into a
 workspace do not update themselves, so a copy can be months old. Mention a
 mismatch in one sentence, offer to re-import, then carry on either way.
@@ -39,7 +39,7 @@ They are files in this skill. Try these in order, and say which one worked if
 the first one did not:
 
 1. **`skills/<name>/SKILL.md`** — the copy that travelled with this skill.
-2. **`https://raw.githubusercontent.com/digistore-io/ds24-skills/main/skills/<name>/SKILL.md`**
+2. **`https://raw.githubusercontent.com/digistore24/ds24-skills/main/skills/<name>/SKILL.md`**
    — the same file from GitHub, if your platform did not keep the bundled
    folders. The files a skill carries hang off the same address, with its
    `references/…`, `scripts/…` or `adapters/…` entry appended.
@@ -82,7 +82,7 @@ available, installing them as eight separate skills is better, because each then
 loads on its own trigger:
 
 ```
-npx skills add https://github.com/digistore-io/ds24-skills/tree/main/skills
+npx skills add https://github.com/digistore24/ds24-skills/tree/main/skills
 ```
 
 That address ends in `/skills` on purpose: pointed at the repository itself, the

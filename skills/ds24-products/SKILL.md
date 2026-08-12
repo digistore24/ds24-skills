@@ -25,7 +25,7 @@ Step 4 and check the connection rather than rebuilding it.
 
 ## Step 0a — is this copy of the skill pack current?
 
-Fetch `https://raw.githubusercontent.com/digistore-io/ds24-skills/main/VERSION`
+Fetch `https://raw.githubusercontent.com/digistore24/ds24-skills/main/VERSION`
 and compare with the `VERSION` file in this pack. Mention a mismatch in one
 sentence, then carry on.
 

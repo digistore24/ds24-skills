@@ -37,7 +37,7 @@ not. Everything below is the same thing done by hand.
 *Skills → Add → Import from GitHub*, and paste:
 
 ```
-https://github.com/digistore-io/ds24-skills
+https://github.com/digistore24/ds24-skills
 ```
 
 That is the whole installation, and it brings **all eight** — no download, no
@@ -53,14 +53,14 @@ Want individual ones as their own `/` commands as well — `/ds24-ipn` while you
 are debugging a webhook, say? Import them the same way, one address each:
 
 ```
-https://github.com/digistore-io/ds24-skills/tree/main/skills/ds24-billing
-https://github.com/digistore-io/ds24-skills/tree/main/skills/ds24-products
-https://github.com/digistore-io/ds24-skills/tree/main/skills/ds24-ipn
-https://github.com/digistore-io/ds24-skills/tree/main/skills/ds24-entitlements
-https://github.com/digistore-io/ds24-skills/tree/main/skills/ds24-checkout
-https://github.com/digistore-io/ds24-skills/tree/main/skills/ds24-tokens
-https://github.com/digistore-io/ds24-skills/tree/main/skills/ds24-golive
-https://github.com/digistore-io/ds24-skills/tree/main/skills/ds24-compliance
+https://github.com/digistore24/ds24-skills/tree/main/skills/ds24-billing
+https://github.com/digistore24/ds24-skills/tree/main/skills/ds24-products
+https://github.com/digistore24/ds24-skills/tree/main/skills/ds24-ipn
+https://github.com/digistore24/ds24-skills/tree/main/skills/ds24-entitlements
+https://github.com/digistore24/ds24-skills/tree/main/skills/ds24-checkout
+https://github.com/digistore24/ds24-skills/tree/main/skills/ds24-tokens
+https://github.com/digistore24/ds24-skills/tree/main/skills/ds24-golive
+https://github.com/digistore24/ds24-skills/tree/main/skills/ds24-compliance
 ```
 
 ### Manus — one address, or the ZIP
@@ -70,8 +70,8 @@ works there.
 
 Rather not go through GitHub:
 
-1. **[Download the pack as a ZIP](https://github.com/digistore-io/ds24-skills/archive/refs/heads/main.zip)**
-   *(github.com/digistore-io/ds24-skills/archive/refs/heads/main.zip)*
+1. **[Download the pack as a ZIP](https://github.com/digistore24/ds24-skills/archive/refs/heads/main.zip)**
+   *(github.com/digistore24/ds24-skills/archive/refs/heads/main.zip)*
 2. Unpack it. Inside you get `ds24-skills-main/` — drop in that whole folder to
    get the pack in one go, or a single folder out of `skills/` for just that one.
 3. In Manus: *Skills* in the left sidebar → **+ Add → Upload a skill**.
@@ -81,7 +81,7 @@ Invoke it directly with `/ds24-skills`, or just ask for Digistore24 billing.
 ### Replit, v0, Claude Code, Codex — one command
 
 ```bash
-npx skills add https://github.com/digistore-io/ds24-skills/tree/main/skills
+npx skills add https://github.com/digistore24/ds24-skills/tree/main/skills
 ```
 
 **The address ends in `/skills`, and that matters.** Pointed at the repository
@@ -101,7 +101,7 @@ Fair — the installer says it itself: skills run with full agent permissions, s
 read them first. The manual route is a copy:
 
 ```bash
-curl -sSL -o /tmp/ds24.zip https://github.com/digistore-io/ds24-skills/archive/refs/heads/main.zip
+curl -sSL -o /tmp/ds24.zip https://github.com/digistore24/ds24-skills/archive/refs/heads/main.zip
 unzip -q /tmp/ds24.zip -d /tmp
 mkdir -p .agents/skills && cp -r /tmp/ds24-skills-main/skills/* .agents/skills/
 ```
@@ -160,7 +160,7 @@ reproduce them exactly, and nobody may recompute them with their own code:
 > confirms the bug. So the expected values come from outside.
 
 They are the same vectors the [Digistore SAAS App
-Template](https://github.com/digistore-io/ds24-appkit) measures itself against.
+Template](https://github.com/digistore24/ds24-appkit) measures itself against.
 
 **Where there is a shell** — Replit, v0, Manus, Claude Code, Codex, or your own
 machine — a ready-made checker ships with the skill. It needs Node and a network
@@ -234,7 +234,7 @@ import again. Every skill therefore starts by comparing its own `VERSION`
 against
 
 ```
-https://raw.githubusercontent.com/digistore-io/ds24-skills/main/VERSION
+https://raw.githubusercontent.com/digistore24/ds24-skills/main/VERSION
 ```
 
 and says something when they differ.
@@ -242,7 +242,7 @@ and says something when they differ.
 Everywhere else, updating is the same command that installed them:
 
 ```bash
-npx skills add https://github.com/digistore-io/ds24-skills/tree/main/skills
+npx skills add https://github.com/digistore24/ds24-skills/tree/main/skills
 ```
 
 ## What this is not

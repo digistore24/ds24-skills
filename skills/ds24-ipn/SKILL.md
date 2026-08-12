@@ -26,7 +26,7 @@ Look before you ask. Search the project for `sha_sign`, `on_payment`,
 ## Step 0a — is this copy of the skill pack current?
 
 Skills you imported into a workspace do not update themselves. Fetch
-`https://raw.githubusercontent.com/digistore-io/ds24-skills/main/VERSION` and
+`https://raw.githubusercontent.com/digistore24/ds24-skills/main/VERSION` and
 compare it with the `VERSION` file next to this pack. If yours is older, say so
 in one sentence and offer to re-import — then carry on either way. A stale copy
 is usually still correct; an unmentioned stale copy is how a fixed bug comes

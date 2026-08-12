@@ -15,7 +15,7 @@ does not build anything itself.
 
 ## Step 0a — is this copy of the skill pack current?
 
-Fetch `https://raw.githubusercontent.com/digistore-io/ds24-skills/main/VERSION`
+Fetch `https://raw.githubusercontent.com/digistore24/ds24-skills/main/VERSION`
 and compare with the `VERSION` file in this pack. Skills imported into a
 workspace do not update themselves, so a copy can be months old. Mention a
 mismatch in one sentence, offer to re-import, then carry on either way.
@@ -30,7 +30,7 @@ which is the one outcome this pack exists to prevent.
 **If a skill named below is not in the workspace, fetch it rather than improvise:**
 
 ```
-https://raw.githubusercontent.com/digistore-io/ds24-skills/main/skills/<name>/SKILL.md
+https://raw.githubusercontent.com/digistore24/ds24-skills/main/skills/<name>/SKILL.md
 ```
 
 The files a skill carries hang off the same address — its `references/…`,

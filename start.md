@@ -45,7 +45,7 @@ wrong the person will follow instructions that cannot work.
 ### A1. Install the skills
 
 ```bash
-npx skills add https://github.com/digistore-io/ds24-skills/tree/main/skills
+npx skills add https://github.com/digistore24/ds24-skills/tree/main/skills
 ```
 
 That puts them in `.agents/skills/` — where Replit's agent looks — and links them
@@ -59,7 +59,7 @@ can only take one skill — and installs that instead of the eight.
 If the installer is unavailable or unwelcome, the manual route is a copy:
 
 ```bash
-curl -sSL -o /tmp/ds24.zip https://github.com/digistore-io/ds24-skills/archive/refs/heads/main.zip
+curl -sSL -o /tmp/ds24.zip https://github.com/digistore24/ds24-skills/archive/refs/heads/main.zip
 unzip -q /tmp/ds24.zip -d /tmp
 mkdir -p .agents/skills && cp -r /tmp/ds24-skills-main/skills/* .agents/skills/
 ```
@@ -91,7 +91,7 @@ ask — do not print both and leave them to guess.
 **Lovable** — *Skills → Add → Import from GitHub*, and paste:
 
 ```
-https://github.com/digistore-io/ds24-skills
+https://github.com/digistore24/ds24-skills
 ```
 
 That is the whole installation, and it brings all eight: no download, no
@@ -101,7 +101,7 @@ as its bundled files. It starts `ds24-billing` itself.
 
 **Manus, through the interface** — it has *Skills → + Add → Import from GitHub*
 too, and the same address works. Otherwise: download
-`https://github.com/digistore-io/ds24-skills/archive/refs/heads/main.zip`, unpack
+`https://github.com/digistore24/ds24-skills/archive/refs/heads/main.zip`, unpack
 it, then *Skills → + Add → Upload a skill* and drop in the `ds24-skills-main`
 folder.
 
@@ -111,7 +111,7 @@ While they are doing that, you can read what you need. The pack is public, and
 every file is fetchable:
 
 ```
-https://raw.githubusercontent.com/digistore-io/ds24-skills/main/skills/ds24-billing/SKILL.md
+https://raw.githubusercontent.com/digistore24/ds24-skills/main/skills/ds24-billing/SKILL.md
 ```
 
 Start with `ds24-billing` and follow it — it will name the next skill, and those

@@ -28,7 +28,7 @@ So: the vectors come from outside. Do not recompute them, do not "fix" one that
 fails, do not regenerate the file. A failing vector means your signing is wrong.
 
 They are the same vectors the [Digistore SAAS App
-Template](https://github.com/digistore-io/ds24-appkit) measures its own
+Template](https://github.com/digistore24/ds24-appkit) measures its own
 implementation against, so reproducing them means agreeing with code that is in
 production.
 
