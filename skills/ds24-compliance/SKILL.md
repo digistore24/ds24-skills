@@ -170,6 +170,13 @@ until the second AI feature ships. Two things about the list:
   something that is not switched on, so a part of the app that brings its own AI
   brings its own entry, and the check walks every list there is. A surface
   nobody registered is exactly the one that goes live without a notice.
+- **And the check reads every TEXT store there is, not only the central one.**
+  A feature that brings its own surface usually brings its own wording with it,
+  wherever that part of the app keeps its texts. A check that walks both lists
+  but reads only the main text file reports a missing notice for a sentence the
+  app is showing perfectly — and a legal check that cries wolf is one people
+  learn to click past, which costs more than not having it. So: whatever the app
+  MERGES at run time to decide what a person reads, the check merges too.
 - **The notice is not conditional.** It renders for everybody, every time —
   never behind a preference, a role, a plan, or a "we already told them once"
   flag. The obligation attaches to the interaction, and a returning customer is
@@ -229,6 +236,52 @@ content it means asking the buyer to agree to immediate delivery — otherwise t
 period runs and access has already been handed over. Digistore24 handles much of
 this at checkout as the merchant of record; **confirm what it covers for this
 account rather than assuming either way**, and say what you confirmed.
+
+## Step 6a — two rules that are not law, and cost more than most that are
+
+The platform you sell through has criteria of its own. Breaking one produces no
+error, no failing test and no unhappy customer — it produces a product refused
+at approval, or an account closed after months of selling. Nothing inside the
+app can feel that, which is why both belong in a check rather than in somebody's
+memory.
+
+**1. Do not promise how long access lasts.** A members' area may not be sold as
+lifetime, permanent, unlimited or "for as long as you like"; two years is the
+most that may be offered. The reason is money rather than tone: an offer that is
+gone after 24 months can oblige the seller to refund the whole price. Write what
+is TRUE instead — *pay once, no subscription* for a one-off, *as long as your
+plan runs* for a subscription. A grant with no end date is not a promise; it is
+the absence of an event that ends it, and a refund is still such an event.
+
+**Check it as STEMS, and only where the sentence names access.** Three things
+that decide whether the check is any use:
+
+- **Stems, because languages inflect.** The sentence that made this a rule was
+  *"Einmal kaufen, dauerhaft nutzen"* — it contains none of the forbidden words
+  as the criteria spell them (*dauerhafter*) and every one of them as they are
+  meant. A literal word list passes it.
+- **Only with an access word in the same sentence.** *"Unbegrenzt viele Notizen"*
+  is a feature and is fine; *"unbegrenzt nutzen"* is the refused promise. The
+  difference is the noun. A bare word list opens with a wall of findings on
+  every app that is generous about something, and a check that opens with a wall
+  is one somebody switches off — taking the rule with it.
+- **Say how many you set aside.** Print the count of sentences that carried a
+  word about something other than access, so nobody reads the green tick as
+  "those words do not occur here".
+
+**2. Tell the buyer who charged them.** The payment platform is the name on the
+bank statement, not the seller's. A line nobody recognises does not become a
+support mail, it becomes a call to the bank — and a chargeback costs the sale,
+the fee and a mark on the account.
+
+Two properties, and the second is the one that gets missed:
+
+- **Every post-purchase surface, not just the thank-you page.** A buyer who was
+  already signed in is usually sent straight to what they paid for and never
+  sees the thank-you page at all. Whatever screen they DO land on says it too.
+- **The sentence and the place it is shown are two separate things to check.** A
+  text nobody renders is a string in a file; a render with no text shows the key
+  to a customer. Check both, per surface, per language.
 
 ## Step 7 — what to hand over
 
