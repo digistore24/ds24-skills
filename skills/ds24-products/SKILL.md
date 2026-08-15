@@ -140,6 +140,20 @@ display name, which is the same for both languages and changes with the copy.
 Digistore24 already knows stays buyable until the user deactivates it there.
 Say that out loud when you remove one.
 
+🚨 **Which means the moment to ask is BEFORE you create, not after.** There is
+no API call that undoes a `createProduct`. Once your sync has run, every entry
+it found is a real product in the user's account, and getting rid of one is a
+hand in the Digistore24 backoffice — for each one, in each language. A price
+list that still carries the entries you sketched while you were designing the
+offer will publish all of them.
+
+So the first time your sync would create anything: **print what would be
+created, by name, tell the user it cannot be undone, and wait for a yes.** Then
+create. Runs after that have ids on file and create nothing, so this is one
+question at one moment, not a prompt anybody learns to click through. If some
+entries are drafts rather than offers, give your list a flag that keeps them
+out of the sync instead of asking the user to delete text they still want.
+
 ## Step 4 — register the IPN connection
 
 This is the step that gets forgotten, and its symptom is "the purchase worked
