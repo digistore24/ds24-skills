@@ -8,11 +8,11 @@ not which tool to use. Build the check in whatever runs on your platform.
 
 ## The one thing you may not generate yourself
 
-`../scripts/vectors.json` holds eight frozen input/output pairs for the
+`../scripts/vectors.json` holds frozen input/output pairs for the
 signature: parameters, passphrase, and the exact uppercase-hex SHA512 that
 Digistore24 produces for them.
 
-**Your implementation must reproduce all eight, byte for byte.**
+**Your implementation must reproduce every one of them, byte for byte.**
 
 This is the load-bearing rule of the whole document, and the reason is not
 pedantry:
@@ -84,7 +84,7 @@ anything missing from it is a hole.
 
 | Case | Must |
 |---|---|
-| all eight vectors in `vectors.json` | reproduce exactly |
+| every vector in `vectors.json` | reproduce exactly |
 | correctly signed payload | be accepted |
 | one flipped byte in the signature | be rejected |
 | a value changed after signing | be rejected |

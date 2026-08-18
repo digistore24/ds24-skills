@@ -122,8 +122,24 @@ neither of them shows up in testing:
 - **The same event arrives more than once.** Digistore24 retries until it gets a
   200, and a timeout on your side after the work was done still counts as a
   failure. **Every write your handler makes has to be idempotent**, keyed on
-  something from the payload — `order_id` plus event, or `purchase_id`. Crediting
-  a token balance without such a key hands out the credits twice.
+  something from the payload — `order_id` plus the event name. `order_id` is the
+  identifier Digistore24 guarantees, and it is documented as *"Unique ID of the
+  order. Multiple transactions of the same order have the same order-ID"*: the
+  payment, its refund, a chargeback and every rebilling of one subscription all
+  arrive carrying that same value. That is what makes it both the idempotency key
+  and the key access itself is stored under — a refund can only revoke what a
+  payment granted if the two agree on the identifier. Crediting a token balance
+  without such a key hands out the credits twice.
+
+  ⚠️ **An IPN carries no `purchase_id`.** It appears in no published IPN
+  parameter table, and the real message in `../scripts/vectors.json`
+  (`captured-on-payment`, 173 parameters) does not contain it. The name belongs
+  to the Digistore24 **API**, where `getPurchase` documents its `purchase_id` as
+  "the Digistore24 order id" — the same value under a different name. Key your
+  writes on it and you key them on `undefined` in every message that will ever
+  arrive: either every order collapses onto one key, or nothing ever matches and
+  the retry does the work a second time. Both failures look like a working
+  endpoint until real money moves.
 
 ## What to store
 

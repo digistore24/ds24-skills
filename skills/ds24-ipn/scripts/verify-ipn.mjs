@@ -131,6 +131,27 @@ async function probeAccess(orderId) {
   return await res.json();
 }
 
+/**
+ * The message this script signs and POSTs at the endpoint under test.
+ *
+ * Every key in here must be a field Digistore24 really sends — checked against
+ * the captured `on_payment` in `vectors.json` (173 parameters, redacted values,
+ * untouched key set). An invented field makes a green run worthless: the
+ * handler is driven by a payload no live IPN can produce, so a handler that
+ * reads that field passes here and reads `undefined` from the first real
+ * payment. It also enters the signature, which means the run proves a hash over
+ * a field set Digistore24 never signs.
+ *
+ * `purchase_id` used to be here and was exactly that — it is an API parameter
+ * (`getPurchase`), not an IPN field. The identifier the IPN guarantees is
+ * `order_id`, and it stays the same across the payment, its refund and every
+ * rebilling; see `references/ipn-protocol.md`.
+ *
+ * `billing_type: "subscription"` is the one deliberate departure from the
+ * captured message, which is a one-time payment: it is a real value of a real
+ * field, and the subscription events are the ones whose access rules are worth
+ * exercising.
+ */
 const basePayload = (orderId, event) => ({
   event,
   order_id: orderId,
@@ -144,7 +165,6 @@ const basePayload = (orderId, event) => ({
   // endpoint that hashes something other than UTF-8.
   buyer_first_name: "Jörg",
   buyer_last_name: "Müller",
-  purchase_id: `VERIFY-${orderId}`,
 });
 
 // ── half 2: the live endpoint ────────────────────────────────────────────────

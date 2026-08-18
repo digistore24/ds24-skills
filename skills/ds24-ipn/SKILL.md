@@ -175,7 +175,7 @@ needs no probe endpoint at all.
 
 **One rule holds either way, and it is the whole point:**
 
-> Your signing must reproduce all eight vectors in `scripts/vectors.json`
+> Your signing must reproduce every vector in `scripts/vectors.json`
 > exactly. **Never compute the expected values with your own code.** The bug
 > this catches — signing with uppercased field names — produces an
 > implementation that agrees with itself perfectly and rejects every real
