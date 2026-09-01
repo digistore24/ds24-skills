@@ -1,0 +1,242 @@
+---
+name: ds24-ipn
+language: es
+description: Úsala cuando construyas o arregles el webhook IPN de Digistore24 — el endpoint que recibe los eventos de pago y los convierte en acceso. Cubre la comprobación de la firma SHA512, la asignación de evento a acceso, la idempotencia y un script de verificación que demuestra que el endpoint es correcto. Úsala siempre que el usuario mencione la IPN de Digistore24, un webhook de pago, «firma inválida», compras que no desbloquean nada, reembolsos que no revocan el acceso o una suscripción cancelada que perdió el acceso demasiado pronto.
+---
+
+> **Español** · Original en inglés — [`SKILL.md`](SKILL.md) · [Français](SKILL.fr.md)
+
+# El endpoint IPN de Digistore24
+
+Esta es la pieza que decide quién ha pagado y qué puede usar. Todo lo demás en
+una integración de Digistore24 se puede rehacer más tarde; esto tiene que estar
+bien a la primera, porque equivocarse aquí o bien deja que desconocidos
+desbloqueen tu producto o bien le quita el acceso a gente que ha pagado.
+
+Lo estás construyendo dentro del stack que el usuario ya tenga. Esta skill no
+da por supuesto Next.js, Supabase, Python ni nada más — te da el protocolo, un
+adaptador para tu runtime y un script que demuestra el resultado.
+
+## Paso 0 — ¿ya existe?
+
+Mira antes de preguntar. Busca en el proyecto `sha_sign`, `on_payment`,
+`DIGISTORE_IPN_PASSPHRASE` o una ruta que contenga `ipn`.
+
+- **No hay nada** → sigue con el Paso 1.
+- **Hay algo** → no lo reconstruyas. Ve al Paso 5 y ejecuta el verificador
+  contra ello. Arregla lo que informe, y nada más.
+
+## Paso 0a — ¿esta copia del Skill Pack está al día?
+
+Las skills que has importado a un workspace no se actualizan solas. Descarga
+`https://raw.githubusercontent.com/digistore24/ds24-skills/main/VERSION` y
+compáralo con el archivo `VERSION` que está junto a este pack. Si el tuyo es más
+antiguo, dilo en una frase y ofrece reimportarlo — y luego sigue adelante en
+cualquier caso. Una copia desactualizada suele seguir siendo correcta; una copia
+desactualizada que nadie menciona es la forma en que vuelve un bug ya arreglado.
+
+## Paso 1 — lee el protocolo
+
+Lee **`references/ipn-protocol.es.md`** ahora, entero. Son dos páginas y
+contienen el único detalle que le cuesta un día a todo el mundo: Digistore24
+firma con las mayúsculas y minúsculas **originales** de los nombres de campo
+(`order_id=…`), no en mayúsculas, aunque su propio ejemplo en PHP sugiera lo
+contrario. Una implementación que se equivoque en esto pasa todas sus propias
+pruebas y rechaza todos los pagos reales.
+
+Luego lee **`references/events.es.md`**. Tiene la tabla que asigna eventos a
+accesos, incluidas las dos filas que son contraintuitivas y que cuestan dinero
+cuando se adivinan:
+
+- `on_rebill_cancelled` no hace **nada** al acceso.
+- `on_payment_missed` **suspende de forma reversible** — es una tarjeta
+  caducada, no una marcha.
+
+No las leas por encima ni escribas de memoria. Cada frase que hay en ellas está
+ahí porque alguien se equivocó en producción.
+
+La tercera referencia, **`references/verification.es.md`**, es para el Paso 5 —
+lo que hay que demostrar una vez que el endpoint existe. Léela cuando llegues
+ahí, no ahora.
+
+## Paso 2 — copia el módulo de firma, no escribas uno
+
+`adapters/` contiene tres implementaciones de la firma. **Copia la que
+corresponda al runtime, literalmente, y no la edites nunca:**
+
+| Runtime | Archivo |
+|---|---|
+| Node (runtime Node de Next.js, Express, Nest, Node a secas) | `adapters/signature-node.mjs` |
+| **Deno / Supabase Edge Functions / Lovable Cloud** / Cloudflare Workers / edge de Next.js | `adapters/signature-web.mjs` |
+| Python (FastAPI, Django, Flask, a secas) | `adapters/signature.py` |
+
+Las tres se comprueban contra vectores de prueba congelados compartidos con la
+Digistore SAAS App Template, así que demostrablemente coinciden entre sí y con
+una cuenta real de Digistore24. Reescribir una «para que encaje con el estilo
+del código» tira esa garantía a la basura sin ganar nada.
+
+Son JavaScript plano con tipos JSDoc (o Python plano), así que un proyecto
+TypeScript las importa y sigue teniendo comprobación de tipos completa.
+
+## Paso 3 — construye el endpoint a partir del adaptador correspondiente
+
+Los archivos de endpoint que hay junto a ellos son **ejemplos que adaptas**, no
+archivos para copiar a ciegas:
+
+| Stack | Archivo |
+|---|---|
+| Next.js App Router | `adapters/next-node.ts` |
+| **Supabase Edge Function / Lovable Cloud** | `adapters/deno-edge.ts` |
+| Express | `adapters/express-node.js` |
+| FastAPI | `adapters/python-fastapi.py` |
+
+Sea cual sea el stack, estas cinco propiedades no son negociables:
+
+1. **Lee el cuerpo en bruto y parséalo tú mismo.** Digistore24 envía
+   `application/x-www-form-urlencoded`. Un framework que parsea y vuelve a
+   serializar puede romper la firma.
+2. **Falla en cerrado.** Sin firma → rechaza. Sin passphrase configurada →
+   rechaza. «Saltarse la comprobación cuando falta la passphrase» convierte el
+   endpoint en un endpoint de escritura público la primera vez que una variable
+   de entorno desaparece en un redeploy.
+3. **Responde `200` a un GET**, y a `connection_test`. Digistore24 valida el
+   endpoint de esa manera y se niega a registrar uno que redirija.
+4. **Nunca lances una excepción fuera del handler.** Digistore24 reintenta hasta
+   recibir un 200, así que una excepción se convierte en un bucle de reenvío sin
+   fin. Regístralo, responde 200, reprodúcelo desde el payload en bruto
+   almacenado.
+5. **Guarda el payload en bruto antes de actuar sobre él.** Es el único registro
+   que sobrevive a un bug en todo lo que viene después.
+
+**En Lovable Cloud / Supabase hay una sexta**, y saltársela es silencioso: la
+función tiene que desplegarse con **`verify_jwt = false`**. Digistore24 no envía
+ningún JWT de Supabase, así que con el valor por defecto activado cada IPN
+recibe un 401 antes de que tu código se ejecute y ninguna compra desbloquea nada
+— sin ningún error visible en ninguna parte de la app. Ponlo en
+`supabase/config.toml`:
+
+```toml
+[functions.ds24-ipn]
+verify_jwt = false
+```
+
+## Paso 4 — las cinco invariantes que no están en el switch
+
+Anótalas en las notas de la propia app, porque son invisibles en una revisión:
+
+- **Cada escritura es idempotente**, con clave `(order_id, event)` — con una
+  restricción UNIQUE, no un `SELECT` seguido de un `INSERT`, por el que dos
+  reenvíos concurrentes pasan de largo. Digistore24 reintenta tras un timeout
+  incluso cuando el trabajo salió bien.
+- **Terminado es para siempre.** Una vez que el acceso ha terminado (reembolso,
+  contracargo, último día pagado), ningún evento posterior puede reabrirlo. La
+  entrega no está ordenada, así que un `on_payment` reenviado puede llegar
+  *después* del reembolso. Protégete con el estado almacenado, antes de mirar el
+  nombre del evento.
+- **Un producto que no conoces no concede nada.** La conexión IPN se registra
+  con una lista `product_ids`, y `all` — la cuenta entera del vendedor — es una
+  configuración normal (ver **`ds24-products`**). Así que eventos de un funnel
+  antiguo, de una segunda app o del lanzamiento de otra persona pueden aterrizar
+  legítimamente en tu endpoint. Guarda el payload, responde `200`, no concedas
+  nada. Nunca asignes un id de producto no reconocido a un plan por defecto: eso
+  reparte acceso por una compra que nunca fue tuya, y es un error que nadie nota
+  hasta que la persona equivocada está dentro.
+- **Una misma oferta puede tener VARIOS ids de producto — asígnalos todos.** Un
+  producto de Digistore24 lleva exactamente un idioma, así que una tienda
+  multilingüe vende cada oferta a través de un producto por idioma
+  (**`ds24-products`**), y el payload nombra el que el comprador usó realmente.
+  Asigna solo el id alemán y todas las compras en inglés caen en la regla
+  inmediatamente anterior: un cliente que paga, registrado correctamente, sin
+  que se le conceda nada. Busca el `product_id` del payload entre **todos** los
+  ids de todas las ofertas, y resuélvelos a la misma clave de producto.
+- **De quién es este pago tiene un ORDEN, y se decide aquí.** El identificador
+  que tu checkout puso primero en `tracking[custom]` — ese está autenticado. El
+  correo electrónico del comprador solo después de él, como suposición **no
+  autenticada**: Digistore24 no verifica la dirección que el comprador escribió.
+  Y una dirección que coincide con **más de una cuenta se rechaza**, nunca se
+  resuelve a la primera fila. La atribución concede y nunca revoca, que es la
+  única razón por la que la vía del correo electrónico resulta tolerable
+  siquiera. El orden completo, sus rechazos y lo que no puede autorizarse por
+  una coincidencia de correo electrónico son el Paso 2 de **`ds24-checkout`** —
+  léelo antes de escribir esta parte, porque cada fallo aquí parece un endpoint
+  que funciona.
+
+## Paso 5 — demuéstralo
+
+No le digas al usuario que funciona. **`references/verification.es.md` dice lo
+que hay que demostrar** — léelo y luego construye la comprobación con lo que sea
+que se ejecute en esta plataforma.
+
+Dos cosas deciden cómo:
+
+**¿Hay una shell?** Replit, v0, Manus, Claude Code, Codex — sí. Entonces ejecuta
+el script que viene con esta skill; necesita Node y una conexión de red y nada
+más:
+
+```bash
+node scripts/verify-ipn.mjs \
+  --url https://<la app>/api/ipn \
+  --passphrase "$DIGISTORE_IPN_PASSPHRASE" \
+  --probe https://<la app>/api/ds24-selftest --probe-token "$SECRET"
+```
+
+**Lovable no tiene ninguna.** Allí las skills llevan sus archivos incluidos,
+pero la plataforma los lee en lugar de ejecutarlos — así que en Lovable este
+script es documentación, no una herramienta. Escribe el equivalente como un
+**test dentro de la app** (un test de Deno en Lovable Cloud), que es la forma B
+en `verification.es.md`. Sale más simple: un test con acceso a la base de datos
+lee el registro de acceso directamente y no necesita ningún endpoint de sondeo.
+
+**Una regla vale en ambos casos, y es la razón de ser de todo esto:**
+
+> Tu firma tiene que reproducir exactamente cada vector de
+> `scripts/vectors.json`. **Nunca calcules los valores esperados con tu propio
+> código.** El bug que esto detecta — firmar con los nombres de campo en
+> mayúsculas — produce una implementación que coincide consigo misma a la
+> perfección y rechaza todos los pagos reales. Una comprobación escrita desde el
+> mismo malentendido confirma el bug.
+
+Si construyes tú la comprobación, esa comparación es lo primero que hace.
+
+**Informa de lo que dijo la ejecución**, incluido lo que no cubrió. Una
+ejecución que se saltó la mitad del acceso es una firma demostrada y una
+semántica sin demostrar — dilo así en lugar de darlo por verde.
+
+### Cuando no llega ninguna IPN, este script no puede ayudar
+
+Demuestra lo que hace tu endpoint con un payload. Un pago que nunca llegó hasta
+él no produce nada que comprobar, y entonces la pregunta es sobre la *conexión*,
+no sobre el código. Pregúntale a Digistore24 qué tiene para ese pedido:
+
+```
+POST https://www.digistore24.com/api/call/getPurchase/format/json
+Header: X-DS-API-KEY: <la clave>
+Body:   purchase_id=ABC12345
+```
+
+Desconocido allí → no hubo ninguna compra (o estaba en otra cuenta de vendedor).
+Conocido allí y ausente de tu app → la IPN nunca llegó: una URL registrada que
+ya no responde, un `domain_id` que otro proyecto sobrescribió, o una lista
+`product_ids` en la que este producto no está. Las tres son **`ds24-products`**,
+Paso 4 — y las tres fallan sin ningún mensaje de error en ninguna parte.
+
+Para comprobar por su cuenta los módulos de firma incluidos, allí donde exista
+una shell:
+
+```bash
+node scripts/check-adapters.mjs      # los tres runtimes contra los vectores
+```
+
+## Paso 6 — qué viene después
+
+El endpoint recibe eventos. Tres cosas todavía tienen que existir a su
+alrededor:
+
+- **`ds24-products`** — consigue la clave de API, crea los productos en
+  Digistore24 y registra este endpoint como la conexión IPN. Sin eso nunca te
+  llama nadie. **Empieza aquí.**
+- **`ds24-entitlements`** — el registro de acceso en el que escriben los
+  eventos, y la única función que consulta el resto de la app.
+- **`ds24-checkout`** — el enlace de compra que inicia una compra.
+
+Di cuál vas a empezar y empiézala.

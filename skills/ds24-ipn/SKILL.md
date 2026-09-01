@@ -112,7 +112,7 @@ anywhere in the app. Put it in `supabase/config.toml`:
 verify_jwt = false
 ```
 
-## Step 4 — the three invariants that are not in the switch
+## Step 4 — the five invariants that are not in the switch
 
 Write these down in the app's own notes, because they are invisible in review:
 

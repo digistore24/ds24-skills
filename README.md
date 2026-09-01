@@ -8,6 +8,10 @@ in whatever app it is building, on whatever stack.**
 Works with **Lovable**, **Manus**, **Replit**, **v0**, **Claude Code**, **Codex**
 and anything else that reads the `SKILL.md` convention.
 
+**Also in Spanish and French** — every page of this pack carries a `.es.md` and a
+`.fr.md` beside it: [`README.es.md`](README.es.md) · [`README.fr.md`](README.fr.md).
+The English file is the source; the translations follow it.
+
 This is not a template and not a library. It is the part of a payment
 integration that an agent cannot guess — the signature algorithm, the event
 semantics, the failure modes — plus **frozen test vectors and a specification of
