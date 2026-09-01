@@ -40,6 +40,13 @@ démarre la skill qui la réalise. Lisez-la maintenant — ne planifiez pas
 l'intégration depuis cette page, et ne posez pas à l'utilisateur des questions
 auxquelles elle répond en regardant.
 
+**Vous lisez la version française.** Chaque fichier de ce pack a une version
+`.es.md` et une version `.fr.md` à côté de lui, et le fichier sans suffixe est
+l'original anglais. Les trois disent la même chose — seule la prose change, les
+chemins et les commandes sont identiques. Choisissez selon la langue dans
+laquelle l'utilisateur écrit, restez-y pour tout le pack, et répondez-lui dans
+cette langue.
+
 ## Étape 3 — comment lire n'importe laquelle des huit
 
 Ce sont des fichiers de cette skill. Essayez ceci dans l'ordre, et dites laquelle

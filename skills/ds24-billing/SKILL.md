@@ -13,6 +13,12 @@ turn the events that come back into access.
 This skill works out where the project stands and starts the right next one. It
 does not build anything itself.
 
+**If the user writes in Spanish or French, switch now.** Every file in this pack
+has a `.es.md` and a `.fr.md` beside it, this one included. Read that copy
+instead, hand over to the translated copy of whichever skill comes next, and
+answer in the user's language. The instructions do not differ — only the prose
+does.
+
 ## Step 0a — is this copy of the skill pack current?
 
 Fetch `https://raw.githubusercontent.com/digistore24/ds24-skills/main/VERSION`

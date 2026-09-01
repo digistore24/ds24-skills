@@ -37,6 +37,12 @@ skills/ds24-billing/SKILL.es.md
 arranca la skill que lo hace. Léela ahora — no planifiques la integración desde
 esta página, y no le hagas al usuario preguntas que ella responde mirando.
 
+**Estás leyendo la versión española.** Cada archivo de este pack tiene al lado
+una versión `.es.md` y otra `.fr.md`, y el archivo sin sufijo es el original en
+inglés. Las tres dicen lo mismo — solo cambia la prosa; las rutas y los comandos
+son idénticos. Elige según el idioma en el que escribe el usuario, quédate en él
+durante todo el pack y respóndele en ese idioma.
+
 ## Paso 3 — cómo leer cualquiera de las ocho
 
 Son archivos dentro de esta skill. Prueba estas vías en orden, y di cuál funcionó

@@ -33,6 +33,12 @@ skills/ds24-billing/SKILL.md
 starts the skill that does it. Read it now — do not plan the integration from
 this page, and do not ask the user questions it answers by looking.
 
+**In Spanish or French, read the translation instead.** Every file in this pack
+has a `.es.md` and a `.fr.md` beside it — the entry point above with `.es.md`
+or `.fr.md` in place of `.md`. They say the same things; only the prose is
+translated, and every path and command inside them is the same one. Pick by the
+language the user writes in, stay in it for the whole pack, and answer in it.
+
 ## Step 3 — how to read any of the eight
 
 They are files in this skill. Try these in order, and say which one worked if

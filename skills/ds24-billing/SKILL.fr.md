@@ -17,6 +17,12 @@ transformer les événements qui reviennent en accès.
 Cette skill détermine où en est le projet et lance la bonne skill suivante. Elle
 ne construit rien elle-même.
 
+**Vous lisez la version française.** Chaque fichier de ce pack a une version
+`.es.md` et une version `.fr.md` à côté de lui, celui-ci compris ; le fichier
+sans suffixe est l'original anglais. Passez toujours la main à la copie dans la
+même langue de la skill qui vient ensuite, et répondez à l'utilisateur dans la
+langue où il écrit. Les instructions ne diffèrent pas — seule la prose.
+
 ## Étape 0a — cette copie du Skill Pack est-elle à jour ?
 
 Récupérez `https://raw.githubusercontent.com/digistore24/ds24-skills/main/VERSION`

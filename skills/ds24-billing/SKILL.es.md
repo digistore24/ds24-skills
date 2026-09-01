@@ -17,6 +17,12 @@ vuelven en acceso.
 Esta skill averigua en qué punto está el proyecto y arranca la siguiente que
 toca. No construye nada por sí misma.
 
+**Estás leyendo la versión española.** Cada archivo de este pack tiene al lado
+una versión `.es.md` y otra `.fr.md`, esta incluida; el archivo sin sufijo es el
+original en inglés. Pasa el testigo siempre a la copia en el mismo idioma de la
+skill que venga después, y responde al usuario en el idioma en el que escribe.
+Las instrucciones no difieren — solo la prosa.
+
 ## Paso 0a — ¿esta copia del Skill Pack está al día?
 
 Descarga `https://raw.githubusercontent.com/digistore24/ds24-skills/main/VERSION`
