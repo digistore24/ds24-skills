@@ -1,37 +1,38 @@
 ---
 name: ds24-products
 language: fr
-description: À utiliser lors de la première connexion d'une app à un compte Digistore24 — mettre en place la clé d'API, créer les produits à vendre, enregistrer la connexion du webhook IPN et demander l'approbation de la marketplace. À utiliser dès que l'utilisateur mentionne une clé d'API Digistore24, « connecter Digistore », la création de produits ou de plans, l'enregistrement d'une URL IPN, ou demande pourquoi Digistore24 n'appelle jamais son webhook.
+description: À utiliser pour raccorder une app à un compte Digistore24 la première fois — mettre en place la clé d'API, créer les produits à vendre, enregistrer la connexion IPN (le webhook) et demander l'approbation de la marketplace. À utiliser aussi dès que l'utilisateur mentionne une clé d'API Digistore24, dit « connecter Digistore », veut créer des produits ou des plans, enregistrer une URL IPN, ou demande pourquoi Digistore24 n'appelle jamais son webhook.
 ---
 
 > **Français** · Original en anglais — [`SKILL.md`](SKILL.md) · [Español](SKILL.es.md)
 
 # Connecter l'app à Digistore24
 
-Rien dans une intégration Digistore24 ne fonctionne tant que trois choses
-n'existent pas du côté de Digistore24 : une clé d'API que votre app peut
-utiliser, un produit à vendre et une connexion IPN pointant vers votre endpoint.
-**Faites cela avant tout le reste** — un handler d'IPN que personne
-n'appelle est intestable, et un lien de checkout vers un produit qui n'existe pas
-est un 404.
+Rien, dans une intégration Digistore24, ne fonctionne tant que trois choses
+n'existent pas côté Digistore24 : une clé d'API utilisable par votre app, un
+produit à vendre et une connexion IPN qui pointe vers votre endpoint.
+**Commencez par là** — un handler IPN que personne n'appelle ne peut pas être
+testé, et un lien de checkout vers un produit inexistant renvoie un 404.
 
-## Étape 0 — qu'est-ce qui existe déjà ?
+## Étape 0 — qu'est-ce qui existe déjà ?
 
-Regardez avant de demander :
+Regardez avant de poser des questions :
 
-- Y a-t-il un `DIGISTORE_API_KEY` dans l'environnement ou le coffre à secrets ?
-- Y a-t-il un registre de produits dans le projet (un fichier JSON/config listant
-  les plans avec leurs prix) ?
-- `DIGISTORE_IPN_PASSPHRASE` est-il défini ?
+- Y a-t-il une `DIGISTORE_API_KEY` dans l'environnement ou dans le coffre à
+  secrets ?
+- Le projet contient-il un registre de produits (un fichier JSON ou de
+  configuration qui liste les plans et leurs prix) ?
+- `DIGISTORE_IPN_PASSPHRASE` est-elle définie ?
 
-Ensuite, ne demandez à l'utilisateur que ce qui manque réellement. Si les trois
-sont là, allez à l'Étape 4 et vérifiez la connexion au lieu de la reconstruire.
+Ne demandez ensuite à l'utilisateur que ce qui manque vraiment. Si les trois
+sont là, passez directement à l'Étape 4 et vérifiez la connexion au lieu de la
+reconstruire.
 
-## Étape 0a — cette copie du Skill Pack est-elle à jour ?
+## Étape 0a — cette copie du Skill Pack est-elle à jour ?
 
 Récupérez `https://raw.githubusercontent.com/digistore24/ds24-skills/main/VERSION`
-et comparez avec le fichier `VERSION` de ce pack. Signalez tout écart en une
-phrase, puis continuez.
+et comparez-le au fichier `VERSION` de ce pack. En cas d'écart, signalez-le en
+une phrase, puis poursuivez.
 
 ## Étape 1 — l'API
 
@@ -41,66 +42,67 @@ Header: X-DS-API-KEY: <la clé>
 Body:   application/x-www-form-urlencoded
 ```
 
-**La clé voyage dans l'en-tête, jamais comme paramètre de formulaire.** C'est un
-secret : variable d'environnement ou coffre à secrets de la plateforme, jamais
-dans le code, jamais dans quoi que ce soit que le navigateur reçoit.
+**La clé passe dans l'en-tête, jamais dans un paramètre de formulaire.** C'est
+un secret : une variable d'environnement ou le coffre à secrets de la
+plateforme — jamais dans le code, jamais dans quoi que ce soit qui parvient au
+navigateur.
 
-L'utilisateur la crée lui-même dans son compte Digistore24, sous *Paramètres →
-Clés d'API* (*Settings → API keys*). Demandez-la, dites-lui où la mettre, et
-n'essayez pas de l'extraire d'une session de navigateur.
+L'utilisateur la crée lui-même dans son compte Digistore24, sous
+*Settings → API keys*. Demandez-la-lui, dites-lui où la placer, et n'essayez
+pas de la récupérer dans une session de navigateur.
 
-⚠️ **Dites-lui de lui donner le droit d'ÉCRITURE** (Digistore24 appelle cela
-*writable*). Une clé est cadrée au moment de sa création, et une clé en lecture
-seule lit les produits parfaitement puis échoue sur les deux appels dont l'app ne
-peut pas se passer : créer les produits et créer une URL de checkout. Dites-le
-pendant qu'il est sur cet écran — revenir ensuite pour élargir une clé, cela veut
-dire en créer une nouvelle et la remplacer partout.
+⚠️ **Dites-lui d'accorder à la clé le droit d'ÉCRITURE** (*writable*, dans les
+termes de Digistore24). Les droits d'une clé sont fixés à sa création ; une clé
+en lecture seule lit les produits sans difficulté, puis échoue sur les deux
+appels dont l'app ne peut pas se passer : la création des produits et la
+création d'une URL de checkout. Dites-le pendant que l'utilisateur a cet écran
+sous les yeux — élargir une clé après coup, c'est en créer une nouvelle et la
+remplacer partout.
 
 ## Étape 2 — une seule liste de prix, dans votre app
 
 **Gardez les plans dans un seul fichier de votre projet** — clé, nom affiché,
-prix en centimes, devise, intervalle de facturation — et faites que tout y
-lise : la page de tarifs, le checkout, la vérification du droit d'accès.
+prix en centimes, devise, intervalle de facturation — et faites-y lire tout le
+reste : la page de tarifs, le checkout, la vérification du droit d'accès.
 
-Le prix ne vit **pas** sur le produit Digistore24. L'API de Digistore24 jette
-`data[amount]` sur `createProduct`/`updateProduct` (« obsolète — créez plutôt un
-plan de paiement »), et un plan de paiement stocké chez Digistore24 est figé :
-les essais gratuits, les montées en gamme, les descentes en gamme, les bons de
-réduction et les commissions d'affiliation par lien ne fonctionnent que si le
-plan voyage avec l'appel de checkout. Le prix part donc à `createBuyUrl` au
-moment de l'achat — voir la skill **`ds24-checkout`**.
+Le prix ne vit **pas** sur le produit Digistore24. L'API de Digistore24 ignore
+`data[amount]` dans `createProduct`/`updateProduct` (« obsolète — créez plutôt
+un plan de paiement »), et un plan de paiement stocké chez Digistore24 est
+figé : essais gratuits, montées en gamme, descentes en gamme, bons de réduction
+et commissions d'affiliation par lien ne fonctionnent que si le plan accompagne
+l'appel de checkout. Le prix est donc transmis à `createBuyUrl` au moment de
+l'achat — voir la skill **`ds24-checkout`**.
 
 Un prix, un seul endroit. Une deuxième liste dans le code est une liste qui
 dérive.
 
-🚨 **Mais le produit ne reste pas sans plan — Digistore24 lui donne le sien par
-défaut.** (Environ 27 €, paiement unique, constaté sur un compte réel en
-septembre 2026 ; regardez le produit du vendeur plutôt que de vous fier à ce
-chiffre. Ce qui ne change pas, c'est qu'*un* plan est là.) Votre app ne le
-facture jamais : un plan qui voyage avec l'appel `createBuyUrl` l'emporte
-toujours sur celui qui est stocké. Ce qui le facture, en revanche, c'est le
-**formulaire de commande propre** au produit, qui existe dès que le produit
-existe — et après l'approbation sur la marketplace (**`ds24-golive`**), c'est
-quelque chose que des inconnus trouvent.
+🚨 **Le produit n'est pas pour autant sans plan : Digistore24 lui en attribue
+un par défaut.** (Environ 27 €, paiement unique, tel qu'observé sur un compte
+réel en septembre 2026 ; regardez le produit du vendeur plutôt que de vous fier
+à ce chiffre. Ce qui ne varie pas, c'est qu'*un* plan est là.) Votre app ne le
+facture jamais : le plan qui accompagne l'appel `createBuyUrl` l'emporte sur le
+plan stocké, à chaque fois. Ce qui le facture, c'est le **formulaire de
+commande propre** au produit — il existe dès que le produit existe, et après
+l'approbation de la marketplace (**`ds24-golive`**), des inconnus le trouvent.
 
-Deux conséquences, faciles à manquer toutes les deux :
+Deux conséquences en découlent, et toutes deux passent facilement inaperçues :
 
 - **Prévenez le vendeur avant qu'il n'ouvre son backoffice.** Il y verra un prix
   qu'il n'a jamais fixé, à côté d'un produit que son app vend à un autre tarif.
-  Annoncé, c'est une curiosité ; découvert seul, cela ressemble à une panne, et
-  la réparation vers laquelle il se tourne est une deuxième liste de prix.
-- **Décidez délibérément ce que votre gestionnaire d'IPN fait d'un achat passé
-  là.** Il ne porte pas de `tracking[custom]`, il est facturé au plan du produit
-  et non au vôtre, et si votre offre est un **abonnement**, il enverra
-  exactement un événement de paiement — jamais un renouvellement, jamais une
-  résiliation, donc rien de ce que vous accrochez à ces événements ne se
-  déclenchera pour lui. L'Étape 2 de **`ds24-checkout`** dit pourquoi l'absence
-  de `custom` ne suffit pas à savoir que c'est ce qui s'est passé.
+  Annoncé d'avance, c'est une curiosité ; découvert seul, cela ressemble à une
+  anomalie — et la réparation qui vient à l'esprit est une deuxième liste de prix.
+- **Décidez sciemment ce que votre handler IPN fait d'un achat passé par là.**
+  Il n'a pas de `tracking[custom]`, son prix est celui du plan du produit et non
+  le vôtre, et si votre offre est un **abonnement**, il n'enverra qu'un seul
+  événement de paiement — jamais de renouvellement, jamais de résiliation :
+  rien de ce que vous accrochez à ces événements ne se déclenchera pour lui.
+  L'Étape 2 de **`ds24-checkout`** explique pourquoi l'absence de `custom`, à
+  elle seule, ne permet pas de savoir que c'est ce qui s'est passé.
 
-**Si votre app parle plus d'une langue, l'entrée contient un id de produit par
-langue** — pas un seul id. La raison, c'est l'Étape 3 ; donnez-lui la bonne forme
-ici, car la changer après la première vente signifie de nouveaux produits et de
-nouvelles approbations :
+**Si votre app parle plusieurs langues, l'entrée porte un id de produit par
+langue** — pas un id unique. La raison est à l'Étape 3 ; fixez la bonne forme
+dès maintenant, parce que la changer après la première vente signifie de
+nouveaux produits et de nouvelles approbations :
 
 ```
 pro:
@@ -111,207 +113,209 @@ pro:
     en: null
 ```
 
-**Et si l'app a plus d'un environnement, gardez un JEU de produits par
+**Et si l'app a plusieurs environnements, gardez un JEU de produits par
 environnement** (dev / prod — staging seulement s'il existe vraiment). Les
-produits que vous créez contre une URL de préversion ou de développement sont des
-articles de test : donnez-leur leurs propres ids dans le registre, marquez-les
-visiblement dans le nom du produit (`"Pro [DEV]"` — l'API de Digistore24 n'a pas
-de champ d'étiquette, le nom est ce qu'un humain voit dans le backoffice), et
-laissez propres les noms des produits en production. Un jeu ne doit jamais
-revendiquer les produits de l'autre — voir la note sur l'idempotence plus bas. Un
-vendeur qui ne synchronise jamais que contre le domaine de production a un seul
-jeu, et c'est très bien.
+produits créés contre une URL de prévisualisation ou de développement sont des
+articles de test : donnez-leur leurs propres ids dans le registre, marquez-les
+visiblement dans le nom du produit (`"Pro [DEV]"` — l'API de Digistore24 n'a
+pas de champ d'étiquette ; le nom est ce qu'un humain voit dans le backoffice)
+et laissez propres les noms des produits de production. Un jeu ne doit jamais
+s'approprier les produits de l'autre — voir la note sur l'idempotence plus bas.
+Un vendeur qui ne synchronise jamais que contre le domaine de production n'a
+qu'un seul jeu, et c'est très bien ainsi.
 
-## Étape 3 — créez les produits
+## Étape 3 — créer les produits
 
 `createProduct` / `updateProduct` avec le nom, la description et **`language`**.
-Réécrivez l'id de produit renvoyé dans votre liste de prix, pour que la
-correspondance soit enregistrée et non redéduite.
+Reportez l'id de produit renvoyé dans votre liste de prix : la correspondance
+est ainsi enregistrée, pas recalculée à chaque fois.
 
-### Un produit par offre ET par langue — c'est celui que tout le monde rate
+### Un produit par offre ET par langue — c'est ici que l'on se trompe le plus souvent
 
-**Un produit Digistore24 porte exactement UNE langue, et cette langue est celle
-du FORMULAIRE DE COMMANDE que votre acheteur remplit** — les libellés des champs,
-les boutons, les noms des moyens de paiement, les conditions de résiliation.
-C'est `data[language]` sur le produit.
+**Un produit Digistore24 porte exactement UNE langue, et c'est celle du
+FORMULAIRE DE COMMANDE que remplit votre acheteur** — libellés des champs,
+boutons, noms des moyens de paiement, conditions de résiliation. Sur le produit,
+c'est `data[language]`.
 
 **`createBuyUrl` n'a pas de paramètre de langue.** Ses arguments sont
 `product_id`, `buyer`, `payment_plan`, `tracking`, `valid_until`, `urls`,
-`placeholders`, `settings` et `addons` — il n'y a rien là-dedans pour écraser la
-langue du produit, et aucun paramètre d'URL ne le fait non plus. Vous ne pouvez
-donc pas décider de la langue du formulaire au moment du checkout. Vous en
-décidez en **choisissant vers quel produit vous envoyez l'acheteur**.
+`placeholders`, `settings` et `addons` — rien là-dedans ne permet de remplacer
+la langue du produit, et aucun paramètre d'URL ne le fait non plus. La langue
+du formulaire ne se décide donc pas au moment du checkout ; elle se décide en
+**choisissant le produit vers lequel vous envoyez l'acheteur**.
 
-Une app dont l'interface parle allemand et anglais a donc besoin de **deux
-produits Digistore24 par offre**, un avec `language=de` et un avec `language=en`,
-et le checkout choisit selon la langue du visiteur. Envoyez tout le monde vers un
-seul produit et la moitié de vos clients se voient demander leurs coordonnées
-bancaires dans une langue qu'ils n'ont pas choisie — ce qui est exactement là où
-un achat est abandonné.
+Une app dont l'interface existe en allemand et en anglais a donc besoin de
+**deux produits Digistore24 par offre**, l'un avec `language=de`, l'autre avec
+`language=en`, et le checkout choisit selon la langue du visiteur. Envoyez tout
+le monde vers un seul produit, et la moitié de vos clients devront saisir leurs
+coordonnées bancaires dans une langue qu'ils n'ont pas choisie — précisément le
+moment où un achat est abandonné.
 
-Trois conséquences qui méritent d'être écrites dans ce que vous construirez :
+Trois conséquences à inscrire dans ce que vous construisez :
 
-- **Définissez `data[language]` explicitement sur chaque produit.** Omis,
-  Digistore24 retombe sur la langue de la session API — le choix délibéré de
-  personne, et la cause habituelle d'une boutique allemande qui affiche des
+- **Définissez `data[language]` explicitement sur chaque produit.** Sans cela,
+  Digistore24 retombe sur la langue de la session API — un choix que personne
+  n'a fait, et la cause habituelle d'une boutique allemande qui affiche des
   formulaires de commande en anglais.
-- **Couvrez toutes les langues de votre app.** Une langue manquante devrait quand
+- **Couvrez toutes les langues de votre app.** Une langue absente doit quand
   même vendre (retombez sur un autre produit plutôt que d'afficher un bouton
-  mort) — mais dites-le dans la sortie de votre synchronisation, parce que rien
-  d'autre ne le fera jamais : l'app s'affiche bien, le checkout s'ouvre, l'achat
-  aboutit.
-- **Chaque produit de langue est approuvé séparément**, sur la marketplace à
-  laquelle sa langue appartient. Voir la skill **`ds24-golive`**.
+  mort) — mais dites-le dans la sortie de votre synchronisation, car rien
+  d'autre ne le dira jamais : l'app s'affiche correctement, le checkout s'ouvre,
+  l'achat aboutit.
+- **Chaque produit de langue est approuvé séparément**, sur la marketplace dont
+  relève sa langue. Voir la skill **`ds24-golive`**.
 
-Le *texte* de votre produit est une question distincte. Envoyer le même nom et la
-même description aux deux produits est une valeur par défaut parfaitement bonne —
-c'est le *formulaire* autour qui doit suivre l'acheteur.
+Le *texte* de votre produit est une autre question. Envoyer le même nom et la
+même description aux deux produits est un choix par défaut tout à fait valable
+— c'est le *formulaire* qui l'entoure qui doit suivre l'acheteur.
 
-Rendez cela **idempotent** : lancez-le deux fois et le second passage met à jour
-au lieu de créer un doublon. Indexez-le sur votre propre clé de produit **plus la
-langue** — et, si vous gardez des jeux séparés par environnement, **plus
-l'environnement** (`pro__en__prod`) — chaque produit a besoin de son propre
-identifiant stable. N'indexez jamais sur le nom affiché, qui est le même pour les
-deux langues et change avec le texte.
+Rendez l'opération **idempotente** : lancée deux fois, elle met à jour au second
+passage au lieu de créer un doublon. Indexez-la sur votre propre clé de produit
+**plus la langue** — et, si vous tenez des jeux séparés par environnement,
+**plus l'environnement** (`pro__en__prod`) : chaque produit a besoin de son
+propre identifiant stable. N'indexez jamais sur le nom affiché, qui est le même
+dans les deux langues et change avec le texte.
 
-**Supprimer un produit de votre liste ne le dépublie pas.** Un produit que
+**Retirer un produit de votre liste ne le dépublie pas.** Un produit que
 Digistore24 connaît déjà reste achetable jusqu'à ce que l'utilisateur le
-désactive là-bas. Dites-le à voix haute quand vous en retirez un.
+désactive là-bas. Dites-le explicitement quand vous en retirez un.
 
-🚨 **Ce qui veut dire que le moment de demander est AVANT de créer, pas après.**
+🚨 **Autrement dit, le moment de demander, c'est AVANT de créer, pas après.**
 Aucun appel d'API n'annule un `createProduct`. Une fois votre synchronisation
 passée, chaque entrée qu'elle a trouvée est un produit réel dans le compte de
-l'utilisateur, et se débarrasser d'un produit est une main dans le backoffice
-Digistore24 — pour chacun, dans chaque langue. Une liste de prix qui porte encore
-les entrées que vous avez esquissées en concevant l'offre les publiera toutes.
+l'utilisateur, et s'en débarrasser est une opération à la main dans le
+backoffice Digistore24 — pour chaque produit, dans chaque langue. Une liste de
+prix qui contient encore les entrées esquissées pendant la conception de
+l'offre les publiera toutes.
 
-Donc la première fois que votre synchronisation créerait quoi que ce soit :
-**affichez ce qui serait créé, par nom, dites à l'utilisateur que c'est
-irréversible, et attendez un oui.** Puis créez. Les passages suivants ont les ids
-au dossier et ne créent rien, c'est donc une question à un moment, pas une invite
-que l'on apprend à cliquer sans lire. Si certaines entrées sont des brouillons
-plutôt que des offres, donnez à votre liste un drapeau qui les tient hors de la
-synchronisation au lieu de demander à l'utilisateur de supprimer du texte qu'il
-veut encore.
+Donc, la première fois que votre synchronisation s'apprête à créer quoi que ce
+soit : **affichez ce qui serait créé, nom par nom, prévenez l'utilisateur que
+c'est irréversible, et attendez un oui.** Puis créez. Les passages suivants
+trouvent les ids déjà enregistrés et ne créent rien : c'est une question posée
+une fois, à un moment précis, pas une invite que l'on apprend à valider sans
+lire. Si certaines entrées sont des brouillons et non des offres, donnez à votre
+liste un drapeau qui les tient à l'écart de la synchronisation, plutôt que de
+demander à l'utilisateur de supprimer un texte qu'il veut garder.
 
-## Étape 4 — enregistrez la connexion IPN
+## Étape 4 — enregistrer la connexion IPN
 
-C'est l'étape qu'on oublie, et son symptôme est « l'achat a marché mais rien ne
-s'est passé dans l'app ».
+C'est l'étape que l'on oublie, et son symptôme est « l'achat a fonctionné, mais
+il ne s'est rien passé dans l'app ».
 
-- `ipnSetup` enregistre l'endpoint. Digistore24 **le valide immédiatement** avec
-  un `GET` et exige un HTTP `200` — une redirection (301/302) échoue aussi.
-- **L'URL doit être en `https` public.** Digistore24 refuse `http` et refuse
-  `localhost` sans discuter.
-- Digistore24 génère la **passphrase IPN** ou prend la vôtre. Quoi qu'il en soit,
-  elle doit finir dans l'environnement de l'app sous `DIGISTORE_IPN_PASSPHRASE` —
-  c'est le secret partagé avec lequel la signature est calculée, et sans lui
-  chaque IPN est correctement rejetée.
+- `ipnSetup` enregistre l'endpoint. Digistore24 **le valide immédiatement** par
+  un `GET` et exige un HTTP `200` — une redirection (301/302) échoue elle aussi.
+- **L'URL doit être publique et en `https`.** Digistore24 refuse `http` et
+  refuse `localhost`, purement et simplement.
+- Digistore24 génère la **passphrase IPN** ou prend la vôtre. Dans les deux
+  cas, elle doit se retrouver dans l'environnement de l'app sous
+  `DIGISTORE_IPN_PASSPHRASE` : c'est le secret partagé avec lequel la signature
+  est calculée, et sans lui chaque IPN est rejetée — à juste titre.
 
-L'appel prend ces paramètres, et deux d'entre eux décident si les événements
-arrivent un jour :
+L'appel prend les paramètres suivants, et deux d'entre eux décident si des
+événements arriveront un jour :
 
 | | |
 |---|---|
-| `ipn_url` | votre endpoint, https public |
+| `ipn_url` | votre endpoint, public et en https |
 | `name` | le nom de la connexion dans le backoffice |
 | `domain_id` | **l'identité de cette connexion** — voir plus bas |
-| `product_ids` | quels produits elle couvre — ids séparés par des virgules, ou `all` |
-| `sha_passphrase` | la vôtre, ou `random` pour en faire générer une et la recevoir |
+| `product_ids` | les produits qu'elle couvre — des ids séparés par des virgules, ou `all` |
+| `sha_passphrase` | la vôtre, ou `random` pour en faire générer une et la recevoir en retour |
 
-### `ipnSetup` est aussi la mise à jour — c'est le `domain_id` qui décide
+### `ipnSetup` fait aussi la mise à jour — c'est le `domain_id` qui décide
 
-Il n'y a pas de fonction de mise à jour séparée. Digistore24 cherche une
-connexion par **(marchand, clé d'API, `domain_id`)** : même id → la connexion
-existante est mise à jour, id inconnu → une deuxième connexion voit le jour.
-C'est ce qui rend l'appel idempotent, et c'est pourquoi l'id doit être **noté
-quelque part** (une variable d'environnement, une ligne de paramètres) plutôt que
-redéduit de quelque chose qui change.
+Il n'existe pas de fonction de mise à jour distincte. Digistore24 retrouve une
+connexion par le triplet **(marchand, clé d'API, `domain_id`)** : même id → la
+connexion existante est mise à jour, id inconnu → une deuxième connexion
+apparaît. C'est ce qui rend l'appel idempotent, et c'est pourquoi l'id doit
+être **noté quelque part** (une variable d'environnement, une ligne de
+paramètres) plutôt que recalculé à partir de quelque chose qui change.
 
-**Et il doit être unique.** C'est la partie qu'on saute, et elle échoue
-invisiblement. Une valeur générique — `test-local-1`, `local-app`, `myapp`,
-`production` — n'est pas un nom, c'est une collision avec l'**autre** projet de
-l'utilisateur lui-même : les deux n'obtiennent pas deux connexions, ils écrasent
-la même chacun leur tour. La deuxième configuration repointe silencieusement
-l'IPN de la première app vers sa propre URL, et dès lors les achats de la
-première app n'arrivent nulle part. Les deux passages annoncent un succès.
+**Et il doit être unique.** C'est la partie que l'on saute, et l'échec est
+invisible. Une valeur générique — `test-local-1`, `local-app`, `myapp`,
+`production` — n'est pas un nom, c'est une collision avec un **autre** projet du
+même utilisateur : les deux n'obtiennent pas deux connexions, ils écrasent la
+même à tour de rôle. La deuxième configuration redirige en silence l'IPN de la
+première app vers sa propre URL, et à partir de là les achats de la première
+app n'arrivent plus nulle part. Les deux passages annoncent un succès.
 
-Alors mettez-lui une queue aléatoire et stockez-le :
+Ajoutez-lui donc un suffixe aléatoire, et stockez-le :
 
 ```
 test-local-diw2hvnz73
 myapp-prod-k7f2m9x1qc
 ```
 
-La partie lisible dit de quelle app il s'agit ; la queue est ce qui le rend
-unique. Ne le réutilisez jamais entre deux apps, et ne le changez jamais
-simplement parce que l'URL a changé — le changer, c'est comme cela qu'on obtient
-une deuxième connexion, en double.
+La partie lisible dit de quelle app il s'agit ; le suffixe est ce qui le rend
+unique. Ne réutilisez jamais le même pour deux apps, et ne le changez jamais au
+seul motif que l'URL a changé — le changer, c'est exactement ainsi que l'on se
+retrouve avec une deuxième connexion, en double.
 
-### `product_ids` — quels achats cette connexion rapporte
+### `product_ids` — les achats que cette connexion rapporte
 
-Ids de produits Digistore24 séparés par des virgules : `product_ids=111,222,333`.
-La valeur par défaut est `all`, tout le compte.
+Des ids de produits Digistore24 séparés par des virgules :
+`product_ids=111,222,333`. Par défaut, `all` : tout le compte.
 
-**Préférez nommer les produits réels.** Le compte d'un vendeur contient
-généralement plus que l'app que vous construisez — un ancien tunnel de vente, une
-deuxième app, le lancement de quelqu'un d'autre — et une connexion cadrée sur ses
-propres produits est ce qui permet à deux apps du même vendeur d'être connectées
-en même temps.
+**Préférez nommer les produits concernés.** Le compte d'un vendeur contient
+généralement plus que l'app que vous construisez — un ancien tunnel de vente,
+une deuxième app, le lancement de quelqu'un d'autre — et c'est une connexion
+limitée à ses propres produits qui permet de connecter deux apps du même
+vendeur en même temps.
 
-`all` est acceptable, à une condition qui appartient à l'endpoint : **l'achat
-d'un produit que votre app ne connaît pas doit être ignoré, pas deviné.**
-Enregistrez-le si vous voulez, n'accordez rien pour lui. Un endpoint qui fait
-correspondre un produit inconnu à un plan par défaut distribue un accès pour un
+`all` est acceptable, à une condition qui relève de l'endpoint : **l'achat d'un
+produit que votre app ne connaît pas doit être ignoré, pas deviné.**
+Enregistrez-le si vous voulez, mais n'accordez rien pour lui. Un endpoint qui
+rattache un produit inconnu à un plan par défaut distribue un accès pour un
 achat qui n'a jamais été le vôtre.
 
-**Sur une plateforme hébergée de création par IA, c'est la partie facile**, et
-cela vaut la peine de le dire à l'utilisateur : l'URL de préversion/production
-d'une app Lovable, Replit, v0 ou Manus est déjà en https public, l'endpoint peut
-donc être enregistré directement. Sur un portable, non — une adresse locale a
-d'abord besoin d'un tunnel.
+**Sur une plateforme de création par IA hébergée, c'est la partie facile**, et
+cela vaut la peine de le dire à l'utilisateur : l'URL de prévisualisation ou de
+production d'une app Lovable, Replit, v0 ou Manus est déjà publique et en
+https, l'endpoint peut donc être enregistré directement. Sur un ordinateur portable,
+non — une adresse locale a d'abord besoin d'un tunnel.
 
-## Étape 5 — avant l'argent réel : l'approbation
+## Étape 5 — avant l'argent réel : l'approbation
 
 Un produit peut faire l'objet d'un **achat de test** immédiatement, par le
-vendeur, avec le cookie d'achat de test de Digistore24 posé — ou, dans un
+vendeur, avec le cookie d'achat de test de Digistore24 en place — ou, dans un
 environnement de développement, avec le paramètre testpay sur l'URL d'achat
-(**`ds24-checkout`**, Étape 4a). C'est ainsi que vous vérifiez toute la chaîne
-sans déplacer d'argent.
+(**`ds24-checkout`**, Étape 4a). C'est ainsi que l'on vérifie toute la chaîne
+sans faire circuler d'argent.
 
-Vendre au public via un **revendeur (reseller)** demande en plus l'**approbation
-de la marketplace** (`approval_status=pending`) — ne la demandez qu'une fois la
-description et l'app vraiment terminées, car un produit à moitié construit se
-fait refuser et la deuxième tentative est plus lente.
+Vendre au public par l'intermédiaire d'un **revendeur (reseller)** exige en
+plus l'**approbation de la marketplace** (`approval_status=pending`) — ne la
+demandez qu'une fois la description et l'app réellement terminées : un produit
+à moitié construit est rejeté, et la deuxième tentative est plus lente.
 
 **Un Direct Seller n'a aucune étape d'approbation.** Seuls les siteowners 1
 (Allemagne), 2 (États-Unis), 3 (Royaume-Uni) et 4 (Irlande) sont des revendeurs
-et approuvent des produits ; un vendeur qui vend sur son propre compte n'a rien à
-demander et rien à attendre. Vérifiez à qui vous avez affaire avant de promettre
-à l'utilisateur une étape d'approbation — ou de construire un rappel qu'il ne
-pourra jamais satisfaire.
+et approuvent des produits ; un vendeur qui vend sur son propre compte n'a rien
+à demander et rien à attendre. Vérifiez à qui vous avez affaire avant de
+promettre à l'utilisateur une étape d'approbation — ou de lui construire un
+rappel qu'il ne pourra jamais satisfaire.
 
-Savoir si elle a été accordée est lisible : les éléments de `listProducts` /
-`getProduct` portent `approval_status_list`, une entrée par marketplace. La skill
-**`ds24-golive`** (Étape 4) a le champ, son jeu de valeurs et ses pièges — et
-parcourt toute la mise en production, y compris l'achat de test.
+Le résultat se lit dans l'API : les éléments renvoyés par `listProducts` /
+`getProduct` portent `approval_status_list`, une entrée par marketplace. La
+skill **`ds24-golive`** (Étape 4) décrit le champ, ses valeurs possibles et ses
+pièges — et parcourt toute la mise en production, achat de test compris.
 
-## Étape 6 — prouvez la connexion
+## Étape 6 — prouver la connexion
 
-N'annoncez pas un succès à partir d'une seule réponse d'API. Vérifiez que :
+N'annoncez pas un succès sur la seule foi d'une réponse d'API. Vérifiez que :
 
 1. `GET <votre URL IPN>` répond **200** depuis l'internet public.
 2. Le produit apparaît dans le compte Digistore24 de l'utilisateur.
-3. `DIGISTORE_IPN_PASSPHRASE` est défini dans l'environnement de l'app — pas
+3. `DIGISTORE_IPN_PASSPHRASE` est définie dans l'environnement de l'app — pas
    seulement dans un fichier local que l'app déployée ne lit jamais.
 
 Prouvez ensuite l'endpoint lui-même — la skill **`ds24-ipn`** dit ce qui doit
-tenir et comment le vérifier sur cette plateforme.
+être vrai et comment le vérifier sur cette plateforme.
 
-## Étape 7 — `getPurchase` : consultez une commande vous-même
+## Étape 7 — `getPurchase` : consultez la commande vous-même
 
-Quand l'utilisateur dit *« je l'ai acheté et rien ne s'est passé »*, ne l'envoyez
-pas dans son backoffice Digistore24 vous lire un statut. Demandez à l'API :
+Quand l'utilisateur dit *« j'ai acheté et il ne s'est rien passé »*, ne
+l'envoyez pas lire un statut dans son backoffice Digistore24 pour vous le
+dicter. Interrogez l'API :
 
 ```
 POST https://www.digistore24.com/api/call/getPurchase/format/json
@@ -319,25 +323,26 @@ Header: X-DS-API-KEY: <la clé>
 Body:   purchase_id=ABC12345
 ```
 
-Cela renvoie la vue de Digistore24 sur cette commande — statut, produit,
+Elle renvoie la vue que Digistore24 a de cette commande — statut, produit,
 acheteur, type de facturation, prochain paiement, et les liens de gestion
-(facture, reçu, arrêt du renouvellement automatique, mise à jour des coordonnées
-de paiement). Cela ne change rien, on peut donc l'appeler sans risque pendant un
-diagnostic. `listPurchases` est la même chose pour plusieurs, filtrée (par
-exemple par l'email de l'acheteur).
+(facture, reçu, arrêt du renouvellement automatique, mise à jour des
+coordonnées de paiement). L'appel ne modifie rien ; on peut donc le faire sans
+risque en plein diagnostic. `listPurchases` fait la même chose pour plusieurs
+commandes, avec un filtre (par exemple l'email de l'acheteur).
 
-**Intégrez-le à l'app comme un petit utilitaire admin/CLI dès la première fois
-que vous en avez besoin** — cela transforme une dispute en une recherche. La
-réponse trie la plainte en cas qui n'ont rien à voir les uns avec les autres :
+**Intégrez-le à l'app sous la forme d'un petit utilitaire admin ou CLI dès la
+première fois que vous en avez besoin** — un litige devient une simple
+requête. La réponse range la réclamation dans des cas qui n'ont rien à
+voir les uns avec les autres :
 
-| Ce que dit `getPurchase` | Ce qui ne va pas en réalité |
+| Ce que dit `getPurchase` | Ce qui ne va pas, en réalité |
 |---|---|
-| **Id inconnu / aucune donnée** | il n'y a pas eu d'achat, ou il a été fait dans un autre compte Digistore24 que la clé que vous utilisez. L'app va bien |
-| **Il connaît la commande, votre app non** | elle a été payée et aucune IPN ne vous est parvenue. Regardez la connexion : l'URL enregistrée répond-elle encore, un autre projet a-t-il écrasé le `domain_id`, ce produit est-il dans les `product_ids` de la connexion ? |
-| **Les deux la connaissent, mais l'accès manque** | l'IPN est arrivée et c'est la correspondance événement→accès qui est en faute → **`ds24-entitlements`** |
+| **Id inconnu / aucune donnée** | il n'y a pas eu d'achat, ou il a été fait dans un autre compte Digistore24 que celui de la clé que vous utilisez. L'app n'y est pour rien |
+| **Il connaît la commande, votre app non** | elle a été payée et aucune IPN ne vous est parvenue. Regardez la connexion : l'URL enregistrée répond-elle encore, un autre projet a-t-il écrasé le `domain_id`, ce produit figure-t-il dans les `product_ids` de la connexion ? |
+| **Les deux la connaissent, mais l'accès manque** | l'IPN est arrivée, et c'est dans la correspondance événement→accès que se trouve le défaut → **`ds24-entitlements`** |
 
-Une IPN rejetée est un quatrième cas et a son propre outil — la vérification de
-la signature dans **`ds24-ipn`**, lancée contre le corps brut qui est arrivé.
+Une IPN rejetée est un quatrième cas, avec son propre outil : la vérification
+de signature de **`ds24-ipn`**, lancée sur le corps brut tel qu'il est arrivé.
 
 ## Étape 8 — la suite
 

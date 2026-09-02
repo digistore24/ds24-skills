@@ -1,45 +1,45 @@
 ---
 name: ds24-entitlements
 language: fr
-description: À utiliser pour décider ce qu'un client payant peut réellement utiliser — l'enregistrement d'accès dans lequel écrivent les événements Digistore24, et l'unique fonction que le reste de l'app interroge. Couvre pourquoi l'accès n'est ni la table des commandes ni la table des abonnements, comment restreindre une page ou une fonctionnalité, les montées en gamme où quelqu'un détient deux plans à la fois, et un plan en pause après un paiement manqué. À utiliser dès que l'utilisateur demande comment vérifier si quelqu'un a payé, comment verrouiller une fonctionnalité derrière un plan, ou signale qu'un client ayant résilié a perdu l'accès trop tôt.
+description: À utiliser pour décider ce qu'un client payant a réellement le droit d'utiliser — l'enregistrement d'accès que les événements Digistore24 alimentent, et la seule fonction que le reste de l'app interroge. Explique pourquoi l'accès n'est ni la table des commandes ni celle des abonnements, comment restreindre une page ou une fonctionnalité, les montées en gamme pendant lesquelles quelqu'un détient deux plans à la fois, et le plan mis en pause après un paiement manqué. À utiliser aussi dès que l'utilisateur demande comment vérifier que quelqu'un a payé, comment réserver une fonctionnalité à un plan, ou signale qu'un client ayant résilié a perdu l'accès trop tôt.
 ---
 
 > **Français** · Original en anglais — [`SKILL.md`](SKILL.md) · [Español](SKILL.es.md)
 
 # Ce qu'un client payant peut utiliser
 
-Il y a une seule question que pose l'app — *cette personne peut-elle utiliser
-cette chose ?* — et elle doit avoir exactement une réponse, à un seul endroit.
-Chaque version de ceci qui tourne mal a mal tourné en interrogeant une autre
-table.
+L'app ne pose qu'une seule question — *cette personne a-t-elle le droit
+d'utiliser ceci ?* — et cette question doit avoir exactement une réponse, à un
+seul endroit. Chaque fois que cela a mal tourné, c'est parce que la question
+avait été posée à une autre table.
 
-## Étape 0 — est-ce déjà là ?
+## Étape 0 — est-ce déjà là ?
 
 Cherchez une table d'accès, de droits d'accès ou d'octrois, ou une vérification
-comme `hasPlan(...)`. Si quelque chose existe, n'en construisez pas une
-deuxième — confrontez-la à l'Étape 2 et à l'Étape 3.
+du type `hasPlan(...)`. S'il en existe une, n'en construisez pas une seconde :
+confrontez-la aux Étapes 2 et 3.
 
-## Étape 0a — cette copie du Skill Pack est-elle à jour ?
+## Étape 0a — cette copie du Skill Pack est-elle à jour ?
 
 Récupérez `https://raw.githubusercontent.com/digistore24/ds24-skills/main/VERSION`
-et comparez-le au `VERSION` de ce pack. Signalez tout écart en une phrase, puis
-continuez.
+et comparez-le au `VERSION` de ce pack. S'ils diffèrent, dites-le en une
+phrase, puis poursuivez.
 
 ## Étape 1 — trois enregistrements, et un seul répond
 
-| Enregistrement | Répond | Ne doit jamais décider de l'accès |
+| Enregistrement | Répond à la question | Ne doit jamais décider de l'accès |
 |---|---|---|
-| **commande** | si l'argent a bougé, combien, quand | c'est un enregistrement financier |
-| **abonnement** | ce que Digistore24 croit à propos de la facturation | derrière un abonnement résilié il y a toujours un client payant jusqu'à la fin de la période payée |
-| **accès / octroi d'accès** | **si cette personne peut utiliser ce produit** | — |
+| **commande** | de l'argent a-t-il circulé, combien, quand | c'est une pièce comptable |
+| **abonnement** | l'état de la facturation tel que Digistore24 le voit | derrière un abonnement résilié, il y a encore un client qui a payé, jusqu'à la fin de la période payée |
+| **accès / octroi** | **cette personne a-t-elle le droit d'utiliser ce produit** | — |
 
-La ligne du milieu est le piège. Quelqu'un résilie au jour 3 d'un plan annuel ;
-Digistore24 signale l'abonnement comme résilié immédiatement ; il reste onze
-mois au client. Une app qui restreint selon le statut de l'abonnement le
-verrouille dehors l'après-midi même, et la demande de remboursement est
-entièrement justifiée.
+Le piège, c'est la ligne du milieu. Un client résilie au troisième jour d'un
+plan annuel ; Digistore24 signale aussitôt l'abonnement comme résilié ; il
+reste onze mois au client. Une app qui restreint l'accès d'après le statut de
+l'abonnement le bloque l'après-midi même — et la demande de remboursement qui
+suit est tout à fait justifiée.
 
-**Tenez un enregistrement d'accès séparé.** Forme minimale :
+**Tenez un enregistrement d'accès à part.** Structure minimale :
 
 ```
 access_grants
@@ -54,11 +54,11 @@ access_grants
   unique (member_id, product_key, order_id)
 ```
 
-L'IPN le maintient. Rien d'autre n'y écrit, hormis un octroi d'accès manuel
-délibéré. Quel événement fait quoi, c'est la table des événements de la skill
-**`ds24-ipn`** — lisez-la là-bas avant d'écrire quoi que ce soit de ceci. Si
-cette skill n'est pas installée, celle-ci ne peut pas être terminée
-correctement : installez-la aussi.
+C'est l'IPN qui tient cette table à jour. Rien d'autre n'y écrit, à
+l'exception d'un octroi manuel délibéré. Quel événement fait quoi, c'est la
+table des événements de la skill **`ds24-ipn`** qui le dit — lisez-la là-bas
+avant d'écrire la moindre ligne de ceci. Si cette skill n'est pas installée,
+celle-ci ne peut pas être menée à bien correctement : installez-la également.
 
 ## Étape 2 — une seule fonction, interrogée par fonctionnalité
 
@@ -66,70 +66,73 @@ correctement : installez-la aussi.
 hasAccess(memberId, productKey) -> boolean
 ```
 
-Vrai lorsqu'une ligne existe pour cette paire avec `ended_at IS NULL` **et**
-`suspended_at IS NULL` **et** (`access_until IS NULL` ou `access_until > now`).
+Renvoie vrai lorsqu'il existe une ligne pour cette paire avec `ended_at IS NULL`
+**et** `suspended_at IS NULL` **et** (`access_until IS NULL` ou
+`access_until > now`).
 
-Chaque restriction de l'app l'appelle. Aucune page ne lit la table des octrois
-elle-même, et aucune page ne lit les commandes ou les abonnements pour décider
-quoi que ce soit.
+Chaque restriction d'accès de l'app passe par elle. Aucune page ne lit
+directement la table des octrois, et aucune ne consulte les commandes ou les
+abonnements pour décider quoi que ce soit.
 
-**Interrogez-la par fonctionnalité, pas une fois par utilisateur.** Un changement
-de plan Digistore24 arrête l'ancien renouvellement automatique et démarre un
-nouvel achat, et les deux événements arrivent **à des jours d'intervalle, dans
-un ordre ou dans l'autre** — pendant une montée en gamme, un client détient donc
-les *deux* plans, ou brièvement *aucun*. Le code qui prend « leur plan » pour la
-première entrée d'une liste affiche le mauvais plan à tout client qui monte en
-gamme.
+**Interrogez-la fonctionnalité par fonctionnalité, pas une fois par
+utilisateur.** Chez Digistore24, un changement de plan arrête l'ancien
+renouvellement automatique et déclenche un nouvel achat, et les deux événements
+arrivent **à plusieurs jours d'écart, dans un ordre ou dans l'autre** — pendant
+une montée en gamme, un client détient donc les *deux* plans, ou, brièvement,
+*aucun des deux*. Un code qui prend pour « son plan » la première entrée d'une
+liste affiche le mauvais plan à tous les clients en train de monter en gamme.
 
-## Étape 3 — trois règles qui ne sont pas évidentes
+## Étape 3 — trois règles qui ne vont pas de soi
 
-**Un paiement manqué ne doit pas se lire comme une fermeture de compte.**
-Lorsque `suspended_at` est posé, `hasAccess` dit false à juste titre — et le
-client voit un produit qui s'est simplement volatilisé. Donnez à l'UI une
-seconde question, d'affichage uniquement (« est-ce en pause ? »), et dites
-*votre accès est en pause, le dernier paiement n'est pas passé*. Jamais rien du
-tout.
+**Un paiement manqué ne doit pas ressembler à une fermeture de compte.** Quand
+`suspended_at` est renseigné, `hasAccess` répond faux, et c'est juste — mais
+pour le client, le produit a tout simplement disparu. Donnez à l'interface une
+seconde question, réservée à l'affichage (« est-ce en pause ? »), et dites-lui
+*votre accès est en pause, le dernier paiement n'est pas passé*. Jamais rien
+du tout.
 
-**`access_until` a besoin d'un fuseau horaire UTC explicite à l'affichage.**
-Stockez la fin de la journée qu'il couvre et affichez-le épinglé à UTC — sinon
-tout lecteur en avance sur UTC lit le jour suivant. Donnez à `null` une vraie
-phrase (« pas de date de fin »), jamais une cellule vide.
+**À l'affichage, `access_until` exige un fuseau horaire UTC explicite.** Stockez
+la fin du jour qu'il couvre et affichez-le en le fixant à UTC — sinon, tout
+lecteur dont l'heure locale est en avance sur UTC lit le lendemain. Donnez à
+`null` une vraie phrase (« sans date de fin »), jamais une cellule vide.
 
-**Un solde prépayé n'est pas un droit d'accès.** `hasAccess` répond false pour
-un pack de crédits à jamais, et c'est correct : un plan est un droit, un solde
-est une quantité. Voir **`ds24-tokens`**.
+**Un solde prépayé n'est pas un droit d'accès.** Pour un pack de crédits,
+`hasAccess` répondra toujours faux, et c'est la bonne réponse : un plan est un
+droit, un solde est une quantité. Voir **`ds24-tokens`**.
 
 ## Étape 4 — les octrois manuels, parce que le support en a besoin
 
-Quelqu'un paiera hors du système, ou un achat ne parviendra pas à être attribué.
-Permettez à un opérateur d'accorder l'accès à la main, avec `source = 'manual'`
-et un motif écrit.
+Il arrivera qu'un client paie en dehors du système, ou qu'un achat ne puisse
+pas être attribué. Permettez à un opérateur d'accorder l'accès à la main, avec
+`source = 'manual'` et un motif rédigé.
 
-Deux limites qu'il vaut la peine d'intégrer dès le départ :
+Deux garde-fous à prévoir dès le départ :
 
-- **Seuls les octrois manuels peuvent être révoqués à la main.** L'accès acheté
-  se termine par un événement Digistore24, jamais par un clic — sinon le support
-  peut retirer quelque chose qu'un client a payé sans aucun remboursement
-  associé.
-- **Imposez cela dans l'écriture elle-même**, pas seulement dans l'UI qui cache
-  le bouton. Tout handler est un endpoint HTTP à part entière.
+- **Seuls les octrois manuels peuvent être révoqués à la main.** Un accès acheté
+  prend fin sur un événement Digistore24, jamais sur un clic — sans quoi le
+  support peut retirer à un client ce qu'il a payé, sans qu'aucun remboursement
+  n'y soit associé.
+- **Faites respecter cette règle dans l'écriture elle-même**, pas seulement dans
+  l'interface qui masque le bouton. Tout handler est aussi un endpoint HTTP à
+  part entière.
 
 ## Étape 5 — prouvez-le
 
-Exécutez le vérificateur de la skill **`ds24-ipn`** avec `--probe` pointé sur un
-petit endpoint adossé à `hasAccess`. C'est exactement ce que testent ses
-vérifications d'accès : un remboursement retire l'accès, une résiliation non, un
-paiement manqué suspend de façon réversible, et un paiement relivré ne ressuscite
-pas une commande remboursée.
+Lancez le vérificateur de la skill **`ds24-ipn`** avec `--probe` pointé vers un
+petit endpoint qui s'appuie sur `hasAccess`. C'est précisément ce que ses
+vérifications d'accès mesurent : un remboursement retire l'accès, une
+résiliation ne le retire pas, un paiement manqué suspend de façon réversible, et
+un paiement renvoyé une seconde fois ne fait pas revivre une commande
+remboursée.
 
-Si le vérificateur dit `SKIP` sur celles-ci, rien de ce qui précède n'a été
-testé — dites-le plutôt que de l'annoncer comme fait.
+Si le vérificateur répond `SKIP` sur ces points, rien de ce qui précède n'a été
+testé — dites-le, au lieu de présenter le travail comme terminé.
 
 ## Étape 6 — la suite
 
 - **`ds24-tokens`** — si l'usage est mesuré plutôt que restreint.
 - **`ds24-golive`** — l'achat de test réel.
-- **`ds24-compliance`** — ce que vous stockez désormais sur les personnes, et à
-  quoi cela vous oblige.
+- **`ds24-compliance`** — ce que vous stockez désormais sur des personnes, et ce
+  à quoi cela vous oblige.
 
-Dites laquelle vous commencez, et commencez-la.
+Dites laquelle vous entamez, et entamez-la.
