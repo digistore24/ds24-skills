@@ -153,6 +153,16 @@ est une règle de sécurité, pas une préférence :
 3. **Sinon, stockez la commande non attribuée** et rattachez-la quand cette
    adresse se connecte pour la première fois.
 
+🚨 **« Pas de `custom` » n'est pas un diagnostic, et le lire ainsi est l'erreur.**
+Cela a au moins deux causes que le log ne distingue pas : un de vos acheteurs qui
+n'était pas connecté au moment du clic (vous n'aviez aucun id de membre à
+écrire), et quelqu'un qui n'est jamais passé par votre app — le produit
+Digistore24 a un formulaire de commande qui lui est propre, sur une marketplace
+une fois approuvé, et un achat fait là ne porte rien que vous ayez écrit. Le
+second est en outre facturé au plan stocké du **produit**, pas au vôtre
+(**`ds24-products`**, Étape 2). Si vous voulez les distinguer, c'est le montant
+qui les sépare, pas le champ de tracking.
+
 Deux refus sont ce qui rend l'étape 2 acceptable :
 
 - 🚨 **Une adresse qui correspond à plus d'un compte est refusée, pas résolue

@@ -124,6 +124,14 @@ medio construir se rechaza, y el segundo intento es más lento que el primero.
 Hasta la aprobación, las compras de prueba del vendedor son las únicas compras
 posibles. Ese es el estado correcto en el que estar mientras se construye.
 
+⚠️ **La aprobación es un LISTADO en el marketplace, así que es también el momento
+en que el formulario de pedido propio del producto pasa a ser algo que
+encuentran desconocidos.** Entonces pagan el plan de pago guardado del producto
+— el de Digistore24 por defecto, que nadie puso, no tu precio
+(**`ds24-products`**, Paso 2). Esa compra es real: llega a tu IPN, y si tu
+manejador concede acceso con `on_payment`, lo concede. Aprueba porque quieres el
+marketplace, y sabiendo que esto viene con él.
+
 **A qué marketplace envías lo decide el idioma del PRODUCTO**, no el de la app:
 un producto en alemán va a Digistore24 GmbH, Alemania (`siteowner_id` 1), y
 cualquier otro a Digistore24 Inc., EE. UU. (2). Derivar un único marketplace de

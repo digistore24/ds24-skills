@@ -117,6 +117,13 @@ gets rejected, and the second attempt is slower than the first.
 Until approval, test purchases by the vendor are the only purchases possible.
 That is the correct state to be in while building.
 
+⚠️ **Approval is a marketplace LISTING, so it is also the moment the product's
+own order form becomes something strangers find.** They then pay the product's
+stored payment plan — Digistore24's default, which nobody set, not your price
+(**`ds24-products`**, Step 2). That purchase is a real one: it arrives at your
+IPN, and if your handler grants on `on_payment` it grants. Approve because the
+marketplace is wanted, and know that this comes with it.
+
 **Which marketplace you submit to follows the PRODUCT's language**, not the
 app's: a German product goes to Digistore24 GmbH, Germany (`siteowner_id` 1),
 anything else to Digistore24 Inc., USA (2). Deriving one marketplace from an

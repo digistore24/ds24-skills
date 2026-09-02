@@ -128,6 +128,14 @@ première.
 Jusqu'à l'approbation, les achats de test du vendeur sont les seuls achats
 possibles. C'est l'état correct dans lequel être pendant la construction.
 
+⚠️ **L'approbation est un RÉFÉRENCEMENT sur la marketplace, c'est donc aussi le
+moment où le formulaire de commande propre au produit devient quelque chose que
+des inconnus trouvent.** Ils paient alors le plan de paiement stocké du produit —
+celui de Digistore24 par défaut, que personne n'a fixé, pas votre prix
+(**`ds24-products`**, Étape 2). Cet achat est bien réel : il arrive sur votre
+IPN, et si votre gestionnaire accorde l'accès sur `on_payment`, il l'accorde.
+Approuvez parce que la marketplace est voulue, en sachant que cela vient avec.
+
 **La marketplace à laquelle vous soumettez suit la langue du PRODUIT**, pas celle
 de l'app : un produit allemand va chez Digistore24 GmbH, Allemagne
 (`siteowner_id` 1), tout le reste chez Digistore24 Inc., USA (2). Déduire une

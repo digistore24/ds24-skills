@@ -66,6 +66,28 @@ only work when the plan travels with the checkout call. So the price goes to
 
 One price, one place. A second list in the code is a list that drifts.
 
+🚨 **But the product is not left without a plan — Digistore24 gives it its own
+default.** (About 27 €, single payment, as seen on a real account in September
+2026; look at the vendor's product rather than trusting that number. What does
+not change is that *some* plan is there.) Your app never charges it: a plan that
+travels with the `createBuyUrl` call wins over the stored one, every time. What
+*does* charge it is the product's **own order form**, which exists from the
+moment the product does — and after marketplace approval (**`ds24-golive`**) it
+is something strangers find.
+
+Two things follow, and both are easy to miss:
+
+- **Tell the vendor before they open their backoffice.** They will see a price
+  they never set, next to a product their app sells for something else. Said in
+  advance it is a curiosity; found alone it looks like a fault, and the repair
+  they reach for is a second price list.
+- **Decide deliberately what your IPN handler does with a purchase made
+  there.** It carries no `tracking[custom]`, it is priced by the product's plan
+  and not by yours, and if your offer is a **subscription** it will send exactly
+  one payment event — never a renewal, never a cancellation, so nothing you hang
+  off those events will ever fire for it. **`ds24-checkout`** Step 2 says why the
+  missing `custom` alone cannot tell you this is what happened.
+
 **If your app speaks more than one language, the entry holds one product id per
 language** — not one id. The reason is Step 3; get the shape right here, because
 changing it after the first sale means new products and new approvals:

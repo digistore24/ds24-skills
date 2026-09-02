@@ -149,6 +149,15 @@ orden es una regla de seguridad, no una preferencia:
 3. **Si no, guarda el pedido sin atribuir** y engánchalo cuando esa dirección
    inicie sesión por primera vez.
 
+🚨 **«Sin `custom`» no es un diagnóstico, y leerlo como tal es el error.** Tiene
+al menos dos causas que en el log son idénticas: un comprador tuyo que no había
+iniciado sesión al hacer clic (no tenías ningún id de miembro que escribir), y
+alguien que nunca pasó por tu app — el producto de Digistore24 tiene un
+formulario de pedido propio, en un marketplace una vez aprobado, y una compra
+hecha ahí no lleva nada que hayas escrito tú. La segunda además se cobra al plan
+guardado del **producto**, no al tuyo (**`ds24-products`**, Paso 2). Si quieres
+distinguirlas, lo que las distingue es el importe, no el campo de tracking.
+
 Dos negativas son lo que hace que el paso 2 sea seguro de tener siquiera:
 
 - 🚨 **Una dirección que coincide con más de una cuenta se rechaza, no se

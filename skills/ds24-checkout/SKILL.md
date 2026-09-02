@@ -138,6 +138,15 @@ a security rule, not a preference:
 3. **Otherwise store the order unattributed** and attach it when that address
    first signs in.
 
+🚨 **"No `custom`" is not a diagnosis, and reading it as one is the mistake.** It
+has at least two causes that look identical in the log: a buyer of yours who was
+signed out when they clicked (you had no member id to write), and somebody who
+never went through your app at all — the Digistore24 product has an order form of
+its own, on a marketplace once approved, and a purchase made there carries
+nothing you wrote. The second one is also priced by the **product's** stored
+plan rather than by yours (**`ds24-products`**, Step 2). If you want to tell them
+apart, the amount is what distinguishes them, not the tracking field.
+
 Two refusals are what make step 2 safe to have at all:
 
 - 🚨 **An address matching more than one account is refused, not resolved to the

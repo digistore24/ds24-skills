@@ -73,6 +73,30 @@ moment de l'achat — voir la skill **`ds24-checkout`**.
 Un prix, un seul endroit. Une deuxième liste dans le code est une liste qui
 dérive.
 
+🚨 **Mais le produit ne reste pas sans plan — Digistore24 lui donne le sien par
+défaut.** (Environ 27 €, paiement unique, constaté sur un compte réel en
+septembre 2026 ; regardez le produit du vendeur plutôt que de vous fier à ce
+chiffre. Ce qui ne change pas, c'est qu'*un* plan est là.) Votre app ne le
+facture jamais : un plan qui voyage avec l'appel `createBuyUrl` l'emporte
+toujours sur celui qui est stocké. Ce qui le facture, en revanche, c'est le
+**formulaire de commande propre** au produit, qui existe dès que le produit
+existe — et après l'approbation sur la marketplace (**`ds24-golive`**), c'est
+quelque chose que des inconnus trouvent.
+
+Deux conséquences, faciles à manquer toutes les deux :
+
+- **Prévenez le vendeur avant qu'il n'ouvre son backoffice.** Il y verra un prix
+  qu'il n'a jamais fixé, à côté d'un produit que son app vend à un autre tarif.
+  Annoncé, c'est une curiosité ; découvert seul, cela ressemble à une panne, et
+  la réparation vers laquelle il se tourne est une deuxième liste de prix.
+- **Décidez délibérément ce que votre gestionnaire d'IPN fait d'un achat passé
+  là.** Il ne porte pas de `tracking[custom]`, il est facturé au plan du produit
+  et non au vôtre, et si votre offre est un **abonnement**, il enverra
+  exactement un événement de paiement — jamais un renouvellement, jamais une
+  résiliation, donc rien de ce que vous accrochez à ces événements ne se
+  déclenchera pour lui. L'Étape 2 de **`ds24-checkout`** dit pourquoi l'absence
+  de `custom` ne suffit pas à savoir que c'est ce qui s'est passé.
+
 **Si votre app parle plus d'une langue, l'entrée contient un id de produit par
 langue** — pas un seul id. La raison, c'est l'Étape 3 ; donnez-lui la bonne forme
 ici, car la changer après la première vente signifie de nouveaux produits et de
