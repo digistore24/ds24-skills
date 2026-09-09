@@ -86,6 +86,23 @@ réessayez une fois sans le template et sans son `settings[plan]`, et journalise
 quel plan et quel produit étaient en cause. La vente aboutit à votre propre
 prix ; le vendeur, lui, s'entend dire de relancer la synchronisation.
 
+🚨 **Ne cherchez PAS `payment_plan_not_found`.** Ce nom est celui que l'erreur
+porte à l'intérieur de Digistore24 : c'est une CLÉ de message, traduite avant de
+quitter le serveur. Mesuré sur un compte réel le 2026-09-09, ce qui arrive est
+un HTTP 404 en prose allemande :
+
+```
+"Ungültige Bezahlplan-ID: 999999999 - Bezahlplan nicht vorhanden
+ oder nicht für das gewählte Produkt.", code 4
+```
+
+Cherchez plutôt **l'id de plan que vous avez envoyé, présent dans le message**.
+Digistore24 le répète dans toutes les langues et il est propre à cet appel. Un
+détecteur écrit contre la clé ne trouve rien, la reprise ne se déclenche jamais,
+et la page que vous vouliez protéger s'éteint précisément quand il le faudrait —
+ce qu'aucun test à vous ne peut vous montrer, puisque c'est vous qui y levez
+l'erreur.
+
 🚨 **N'envoyez jamais `payment_plan[template]` seul en espérant qu'il fixe le
 prix de l'appel.** Sans `first_amount`, Digistore24 écarte tout le
 `payment_plan` — y compris les valeurs que le template avait résolues. C'est ce

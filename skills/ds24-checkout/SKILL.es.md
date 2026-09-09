@@ -84,6 +84,23 @@ error, reintenta una vez sin la plantilla y sin su `settings[plan]`, y deja
 registrado qué plan y qué producto eran. La venta sale adelante a tu propio
 precio; al vendedor se le dice que vuelva a lanzar la sincronización.
 
+🚨 **NO busques `payment_plan_not_found`.** Ese nombre es como se llama el error
+dentro de Digistore24: es una CLAVE de mensaje, traducida antes de salir del
+servidor. Medido contra una cuenta real el 2026-09-09, lo que llega es un HTTP
+404 con prosa en alemán:
+
+```
+"Ungültige Bezahlplan-ID: 999999999 - Bezahlplan nicht vorhanden
+ oder nicht für das gewählte Produkt.", code 4
+```
+
+Busca en su lugar **el id de plan que enviaste, presente en el mensaje**.
+Digistore24 lo repite en todos los idiomas y es único de esa llamada. Un
+detector escrito contra la clave no encuentra nada, el reintento no se dispara
+nunca, y la página que querías proteger se queda a oscuras justo cuando hacía
+falta — que es lo único que ningún test tuyo puede enseñarte, porque en él el
+error lo lanzas tú.
+
 🚨 **Nunca envíes `payment_plan[template]` a solas esperando que ponga el precio
 de la llamada.** Sin un `first_amount`, Digistore24 descarta el `payment_plan`
 entero, incluidos los valores que la plantilla había resuelto. Eso es lo correcto

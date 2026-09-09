@@ -74,9 +74,25 @@ plan does the pricing, which is what you want.
 
 ⚠️ **And that error takes out the whole offer, not one card**: the plan belongs
 to the product, so every buy button of that offer — every language — fails at
-once. Catch exactly that error, retry once without the plan and its
-`settings[plan]`, and log which plan and which product. The sale goes through at
-your own price; the vendor gets told to re-run the sync.
+once. Catch it, retry once without the plan and its `settings[plan]`, and log
+which plan and which product. The sale goes through at your own price; the
+vendor gets told to re-run the sync.
+
+🚨 **Do NOT match on `payment_plan_not_found`.** That name is what the error is
+called inside Digistore24; it is a message KEY, translated before it leaves the
+server. Measured against a real account on 2026-09-09, what arrives is HTTP 404
+with German prose:
+
+```
+"Ungültige Bezahlplan-ID: 999999999 - Bezahlplan nicht vorhanden
+ oder nicht für das gewählte Produkt.", code 4
+```
+
+Match on **the plan id you sent appearing in the message** instead. Digistore24
+echoes it in every language and it is unique to that call. A detector written
+against the marker matches nothing, the retry never fires, and the page you
+wrote it to protect goes dark exactly when it is needed — which is the one thing
+no test of your own can show you, because your test raises the error itself.
 
 🚨 **Never send `payment_plan[template]` alone hoping it prices the call.**
 Without a `first_amount` Digistore24 discards the entire `payment_plan` — the
