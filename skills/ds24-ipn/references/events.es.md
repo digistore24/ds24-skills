@@ -101,6 +101,13 @@ y abre una compra nueva. Los dos eventos llegan **con días de diferencia y en
 cualquier orden**. Durante un upgrade, por tanto, el cliente tiene los dos
 planes — o, durante un momento, ninguno.
 
+⚠️ **Cambiar el INTERVALO de facturación no es un cambio de esos.** Mensual y
+anual son dos planes de pago de un mismo producto (**`ds24-products`**), así que
+la clave de producto no cambia y el derecho de acceso no se interrumpe nunca: lo
+hace el propio comprador a través de `switch_pay_interval_url`, y vuelve como un
+recobro periódico normal. Esta sección habla del salto entre dos OFERTAS
+distintas.
+
 Así que la pregunta es «¿tiene esta persona el plan X?», funcionalidad por
 funcionalidad. Nunca tomes como «su plan» la primera entrada de una lista: una
 app que lo muestre así le enseña el plan equivocado a todos los clientes que

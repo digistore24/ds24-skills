@@ -135,7 +135,7 @@ invoquez le point d'entrée par son nom, `ds24-billing`.
 | **`ds24-billing`** | le point d'entrée : établit ce qui existe déjà et lance la skill qui convient ensuite |
 | **`ds24-products`** | la clé d'API, la création des produits, l'enregistrement de la connexion IPN, l'approbation |
 | **`ds24-ipn`** | le webhook : signature, événements, idempotence — **et comment le prouver** |
-| **`ds24-checkout`** | le lien d'achat, le prix sous forme de plan de paiement, l'identité de l'acheteur transportée jusqu'au bout |
+| **`ds24-checkout`** | le lien d'achat, la sélection du plan de paiement du produit, l'identité de l'acheteur transportée jusqu'au bout |
 | **`ds24-entitlements`** | l'enregistrement d'accès et l'unique fonction que l'app interroge |
 | **`ds24-tokens`** | les crédits prépayés, leur consommation, la recharge automatique |
 | **`ds24-golive`** | la vérification préalable, le véritable achat de test, et le remboursement qui prouve l'autre moitié |

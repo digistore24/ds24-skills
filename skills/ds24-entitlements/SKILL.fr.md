@@ -82,6 +82,12 @@ une montée en gamme, un client détient donc les *deux* plans, ou, brièvement,
 *aucun des deux*. Un code qui prend pour « son plan » la première entrée d'une
 liste affiche le mauvais plan à tous les clients en train de monter en gamme.
 
+⚠️ **Un changement d'INTERVALLE de facturation n'est pas une montée en gamme en
+ce sens.** Mensuel et annuel sont deux façons de payer une même offre
+(**`ds24-products`**, Étape 2) : la clé de produit est la même avant et après,
+et `hasAccess` ne vacille jamais. Ne construisez pas le traitement à deux plans
+pour ce cas-là ; c'est le passage entre deux OFFRES différentes qui en a besoin.
+
 ## Étape 3 — trois règles qui ne vont pas de soi
 
 **Un paiement manqué ne doit pas ressembler à une fermeture de compte.** Quand

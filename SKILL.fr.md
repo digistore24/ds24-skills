@@ -74,7 +74,7 @@ refuse chaque paiement réel pour « signature invalide ».
 | `ds24-products` | la clé d'API, la création des produits, l'enregistrement de la connexion IPN |
 | `ds24-ipn` | le webhook : signature, événements, idempotence — et comment le prouver |
 | `ds24-entitlements` | faire d'une commande payée un « peut utiliser le produit » |
-| `ds24-checkout` | le lien d'achat, le prix sous forme de plan de paiement, la page de remerciement |
+| `ds24-checkout` | le lien d'achat, la sélection du plan de paiement du produit, la page de remerciement |
 | `ds24-tokens` | les crédits prépayés, leur consommation, la recharge automatique |
 | `ds24-golive` | la vérification préalable, le vrai achat de test, et le remboursement qui prouve le reste |
 | `ds24-compliance` | les mentions légales, la politique de confidentialité, la divulgation IA qu'impose le règlement européen sur l'IA (EU AI Act), la suppression |

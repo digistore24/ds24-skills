@@ -53,53 +53,85 @@ widen a key afterwards means creating a new one and replacing it everywhere.
 
 ## Step 2 — one price list, in your app
 
-**Keep the plans in one file in your project** — key, display name, price in
-cents, currency, billing interval — and let everything read from it: the pricing
-page, the checkout, the entitlement check.
+**Keep the plans in one file in your project** and let everything read from it:
+the pricing page, the checkout, the entitlement check. One entry per **offer**,
+and under it one entry per **way to pay**.
 
-The price does **not** live on the Digistore24 product. Digistore24's API
-discards `data[amount]` on `createProduct`/`updateProduct` ("deprecated — create
-a payment plan instead"), and a payment plan stored at Digistore24 is fixed:
-free trials, upgrades, downgrades, vouchers and per-link affiliate commissions
-only work when the plan travels with the checkout call. So the price goes to
-`createBuyUrl` at purchase time — see the **`ds24-checkout`** skill.
+🚨 **Monthly and yearly are two ways to pay for ONE offer — not two offers.**
+That is the single most consequential shape decision in this skill. A registry
+that makes them two entries makes them two product keys, and then every access
+check in the app has to name both: `hasAccess(m, "pro_monthly") ||
+hasAccess(m, "pro_yearly")`, in every gate, for ever. One that is written with a
+single key silently refuses half the buyers, behind a page that renders. Keep
+them under one key and the question stays one question.
 
-One price, one place. A second list in the code is a list that drifts.
+At Digistore24 the two axes behave differently, and this is why:
 
-🚨 **But the product is not left without a plan — Digistore24 gives it its own
-default.** (About 27 €, single payment, as seen on a real account in September
-2026; look at the vendor's product rather than trusting that number. What does
-not change is that *some* plan is there.) Your app never charges it: a plan that
-travels with the `createBuyUrl` call wins over the stored one, every time. What
-*does* charge it is the product's **own order form**, which exists from the
-moment the product does — and after marketplace approval (**`ds24-golive`**) it
-is something strangers find.
-
-Two things follow, and both are easy to miss:
-
-- **Tell the vendor before they open their backoffice.** They will see a price
-  they never set, next to a product their app sells for something else. Said in
-  advance it is a curiosity; found alone it looks like a fault, and the repair
-  they reach for is a second price list.
-- **Decide deliberately what your IPN handler does with a purchase made
-  there.** It carries no `tracking[custom]`, it is priced by the product's plan
-  and not by yours, and if your offer is a **subscription** it will send exactly
-  one payment event — never a renewal, never a cancellation, so nothing you hang
-  off those events will ever fire for it. **`ds24-checkout`** Step 2 says why the
-  missing `custom` alone cannot tell you this is what happened.
-
-**If your app speaks more than one language, the entry holds one product id per
-language** — not one id. The reason is Step 3; get the shape right here, because
-changing it after the first sale means new products and new approvals:
+| axis | what it costs |
+|---|---|
+| **language** | one PRODUCT each — the order form's language is a property of the product (Step 3) |
+| **way to pay** | one PAYMENT PLAN each, on that same product |
 
 ```
 pro:
-  name:      "Pro"
-  priceCents: 3900
-  productIds:            # one Digistore24 product per language
+  name: "Pro"
+  paymentOptions:                     # one payment plan each
+    monthly: { priceCents: 3900,  billingInterval: 1_month }
+    yearly:  { priceCents: 39000, billingInterval: 12_month }
+  productIds:                         # one Digistore24 product per language
     de: null
     en: null
+  payplanIds:                         # written back by your sync
+    de: { monthly: null, yearly: null }
+    en: { monthly: null, yearly: null }
 ```
+
+### Where the price lives
+
+**Your file authors it. Digistore24 gets a copy, as payment plans.**
+
+`data[amount]` on the product is deprecated and discarded, so no price is ever
+set on the product itself — the API says so in its own warning: *"create a
+payment plan instead"*. That is what `createPaymentplan` / `updatePaymentplan`
+are for, and your sync writes one per way to pay (Step 3).
+
+⚠️ **You may have read the opposite in an older copy of this pack**, which said
+to keep every price out of Digistore24 and send it with each `createBuyUrl`
+call. The reasoning was: a stored plan is a second place for the price, and it
+cannot do trials, upgrades or vouchers. Half of that was right. What it missed
+is that **your checkout link is not the only way into the product**:
+
+- the product has an **order form of its own**, which no link of yours touches;
+- an **affiliate** can send traffic straight to it;
+- the buyer can **change their billing interval** from inside their purchase
+  (`switch_pay_interval_url`, on every IPN) — and that switches to another
+  *stored* plan, so with none there is nothing to switch to.
+
+All three charge whatever plans hang on the product. A product with no plan of
+yours does not have none: **Digistore24 gives it its own default** — about 27 €,
+single payment, as seen on a real account in September 2026; look at the
+vendor's product rather than trusting that number. On a **subscription** offer
+such an order sends exactly one payment event and never a renewal or a
+cancellation, so the buyer pays once and keeps the access **for ever**.
+
+Writing the plans is what closes that. It is the second reason for this shape;
+the first is that one offer now needs one product instead of two.
+
+Two things follow, and both are easy to miss:
+
+- **Tell the vendor what they will see in their backoffice**: their own prices,
+  one plan per way to pay — **as a copy**. Change a price in the app and sync;
+  change it over there and the next sync changes it back. A vendor who is not
+  told this edits the wrong copy once and concludes the app forgets prices.
+- **A purchase made on the product's own order form still carries no
+  `tracking[custom]`**, so your IPN handler has to attribute it some other way
+  (**`ds24-checkout`** Step 2 says why a missing `custom` alone does not prove
+  that is what happened). What has changed is that it is no longer priced
+  differently from yours, and no longer a subscription that never renews.
+
+**If your app speaks more than one language, the entry holds one product id per
+language** — not one id. The reason is Step 3; get the shape right here, because
+changing it after the first sale means new products and new approvals.
 
 **And if the app has more than one environment, keep one product SET per
 environment** (dev / prod — staging only if it really exists). Products you
@@ -112,11 +144,40 @@ only ever syncs against the live domain has one set, and that is fine.
 
 ## Step 3 — create the products
 
-`createProduct` / `updateProduct` with the name, description and **`language`**.
-Write the returned product id back into your price list so the mapping is
-recorded, not re-derived.
+Two calls per product, in this order:
+
+1. `createProduct` / `updateProduct` with the name, description and
+   **`language`**. Write the returned product id back into your price list so
+   the mapping is recorded, not re-derived.
+2. `createPaymentplan` / `updatePaymentplan` **once per way to pay**, with
+   `product_id`, `first_amount`, `currency`, `first_billing_interval`,
+   `other_amounts`, `other_billing_intervals`, `number_of_installments`
+   (`0` = open-ended subscription, `1` = single payment) and `position`. Write
+   the returned `paymentplan_id` back too.
+
+   Set `is_switching_allowed = Y` where the offer has more than one way to pay:
+   that is what makes Digistore24's own `switch_pay_interval_url` lead
+   somewhere, and it saves you building an upgrade flow for the commonest change
+   a subscriber makes.
+
+⚠️ **Do the two together, not in two passes.** A product that exists without its
+plans has Digistore24's ~27 € default and an order form that charges it; the
+window in which that is true should be one API call wide.
+
+🚨 **And write an OWNERSHIP MARK while you are there.** `createProduct` and
+`updateProduct` both take `data[note]`, a free internal note no buyer sees. Put
+one machine-readable line in it — your app's own id, the product key, the
+language, the environment — and keep whatever else the vendor wrote. Without it
+there is no honest answer to "did WE create this product?", and Step 3b needs
+one. Do not derive that id from the app's name (vendors rename) or from the
+internal product name (two apps built from the same template collide on it):
+generate it once, store it beside the price list, and never regenerate it.
 
 ### One product per offer AND language — this is the one people get wrong
+
+*(And, to say it once more where it is easiest to get backwards: one product per
+LANGUAGE, one payment plan per WAY TO PAY. The language axis multiplies
+products; the way to pay does not.)*
 
 **A Digistore24 product carries exactly ONE language, and that language is the
 language of the ORDER FORM your buyer fills in** — the field labels, the
@@ -158,23 +219,59 @@ and, if you keep separate sets per environment, **plus the environment**
 (`pro__en__prod`) — each product needs its own stable handle. Never key on the
 display name, which is the same for both languages and changes with the copy.
 
-**Deleting a product from your list does not unpublish it.** A product
-Digistore24 already knows stays buyable until the user deactivates it there.
-Say that out loud when you remove one.
+**Deleting a product from your list does not unpublish it by itself.** The
+product Digistore24 already knows stays buyable — through its own order form and
+through any checkout link that exists — until something removes it. That is
+Step 3b.
 
-🚨 **Which means the moment to ask is BEFORE you create, not after.** There is
-no API call that undoes a `createProduct`. Once your sync has run, every entry
-it found is a real product in the user's account, and getting rid of one is a
-hand in the Digistore24 backoffice — for each one, in each language. A price
-list that still carries the entries you sketched while you were designing the
-offer will publish all of them.
+🚨 **Which is why the moment to ask is BEFORE you create, not after.**
+`deleteProduct(product_id)` exists, so this is not permanent in the way an
+older copy of this pack said. But it is only clean while the product has **never
+sold**: one that has taken money can only be deactivated, because its buyers'
+refunds, chargebacks and cancellations still arrive as IPNs naming its id and
+your handler still has to receive them. A product that has taken money is a
+decision the vendor keeps.
 
 So the first time your sync would create anything: **print what would be
-created, by name, tell the user it cannot be undone, and wait for a yes.** Then
-create. Runs after that have ids on file and create nothing, so this is one
-question at one moment, not a prompt anybody learns to click through. If some
-entries are drafts rather than offers, give your list a flag that keeps them
-out of the sync instead of asking the user to delete text they still want.
+created, by name, say what it costs, and wait for a yes.** Then create. Runs
+after that have ids on file and create nothing, so this is one question at one
+moment, not a prompt anybody learns to click through. If some entries are drafts
+rather than offers, give your list a flag that keeps them out of the sync
+instead of asking the user to delete text they still want.
+
+## Step 3b — remove what is no longer offered
+
+An entry taken out of the price list leaves a product behind. Cleaning those up
+is worth doing — an account that fills with abandoned products is how a vendor
+ends up selling something they forgot about — and it is the one step where
+getting it wrong destroys somebody else's work.
+
+**Never act on anything but your own ownership mark** (Step 3). Not on the
+product name, not on the internal name, not on the folder: a vendor's account
+holds products from before your app existed, products of a second app built the
+same way, and products a support agent made by hand. "Probably ours" is not good
+enough for a delete.
+
+Then, per product that carries your mark and is no longer in the price list:
+
+1. **Ask whether it has sales** (`listPurchases` with its `product_id`). If you
+   cannot ask, treat that as "it has" — the cheap mistake is an inactive product
+   too many.
+2. **No sales → `deleteProduct`.** If it fails for any reason, fall through.
+3. **Sales, or a failed delete → `updateProduct` with `data[is_active] = N`.**
+   The product stops being buyable and stays in the account. Say to the vendor
+   that its entry should stay in the price list as a parked one, or its id
+   leaves your IPN registration and its buyers' refunds stop arriving.
+
+🚨 **And do nothing at all when you could not read the notes.** If the product
+listing came back without them, ownership cannot be established, and "zero
+products to remove" is then not an answer — it is silence. Say so and stop.
+Proving the walk ran is not proving the comparison did.
+
+**Behind an explicit flag, always.** Unlike creating, this is not a first-run
+question: a renamed key or a typo in the price list would otherwise delete a
+live product on an ordinary sync. List what would go, change nothing, and let
+the user ask for it.
 
 ## Step 4 — register the IPN connection
 
@@ -317,7 +414,7 @@ A rejected IPN is a fourth case and has its own tool — the signature check in
 
 - **`ds24-ipn`** — the endpoint that receives the events (build it now if it
   does not exist).
-- **`ds24-checkout`** — the buy link, with the price attached.
+- **`ds24-checkout`** — the buy link, selecting the way to pay.
 - **`ds24-golive`** — the test purchase that proves the whole chain.
 
 Say which one you are starting and start it.

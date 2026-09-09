@@ -127,7 +127,7 @@ by name, `ds24-billing`.
 | **`ds24-billing`** | the entry point: works out what already exists and starts the right next skill |
 | **`ds24-products`** | API key, creating products, registering the IPN connection, approval |
 | **`ds24-ipn`** | the webhook: signature, events, idempotency — **and how to prove it** |
-| **`ds24-checkout`** | the buy link, the price as a payment plan, carrying the buyer's identity |
+| **`ds24-checkout`** | the buy link, selecting the product's payment plan, carrying the buyer's identity |
 | **`ds24-entitlements`** | the access record and the one function the app asks |
 | **`ds24-tokens`** | prepaid credits, spending them, automatic top-up |
 | **`ds24-golive`** | pre-flight, the real test purchase, and the refund that proves the other half |

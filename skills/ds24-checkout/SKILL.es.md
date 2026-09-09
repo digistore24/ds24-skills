@@ -1,7 +1,7 @@
 ---
 name: ds24-checkout
 language: es
-description: Úsala para construir el botón de compra, la página de precios o el enlace de checkout de un producto de Digistore24 — crear una URL de compra firmada con createBuyUrl, adjuntar el precio como plan de pago, llevar la identidad del comprador hasta la IPN y montar la página de agradecimiento. Úsala siempre que el usuario mencione un enlace de compra, el checkout, una página de precios, «¿cómo paga el cliente?» o una compra que llega sin que nadie sepa de quién es.
+description: Úsala para construir el botón de compra, la página de precios o el enlace de checkout de un producto de Digistore24 — crear una URL de compra firmada con createBuyUrl, seleccionar el plan de pago del producto para la forma de pago elegida, llevar la identidad del comprador hasta la IPN y montar la página de agradecimiento. Úsala siempre que el usuario mencione un enlace de compra, el checkout, una página de precios, «¿cómo paga el cliente?» o una compra que llega sin que nadie sepa de quién es.
 ---
 
 > **Español** · Original en inglés — [`SKILL.md`](SKILL.md) · [Français](SKILL.fr.md)
@@ -31,7 +31,31 @@ POST https://www.digistore24.com/api/call/createBuyUrl/format/json
 Header: X-DS-API-KEY: <la clave>
 ```
 
-Cuerpo (form-encoded), las partes que importan:
+Cuerpo (form-encoded), y hay **dos formas** — cuál de las dos envías depende de
+si el precio de la oferta ya es un plan de pago sobre el producto (el Paso 3 de
+**`ds24-products`** los escribe, uno por cada forma de pago).
+
+**El caso normal — vender a través del plan guardado:**
+
+```
+product_id                = 512345
+valid_until               = 24h
+settings[plan]            = 991      # el plan de pago de ESTA forma de pago
+settings[hide_plans]      = Y        # el comprador ya eligió en tu página
+payment_plan[template]    = 991      # ver más abajo: se envía para VALIDAR, no para poner precio
+```
+
+Ningún importe. Es el plan guardado el que pone el precio de la venta, y eso es
+lo que hace que tu página, el formulario de pedido propio del producto y el
+cambio de intervalo que hace el propio comprador cobren la misma cifra.
+
+**La excepción — poner el precio aquí.** Tres casos, y solo estos:
+
+| | |
+|---|---|
+| un **upgrade o un downgrade** (`payment_plan[upgrade_order_id]`) | el precio existe para este comprador frente a una compra que ya tiene; no hay dónde guardarlo |
+| una **prueba gratuita** (`payment_plan[test_interval]`) | la misma forma |
+| un plan guardado que **ya no coincide con tu lista de precios** | alguien editó un precio y no sincronizó — envía tu propia cifra, no una caducada |
 
 ```
 product_id                              = 512345
@@ -44,11 +68,26 @@ payment_plan[first_billing_interval]    = 1_month  # omitir por completo para un
 payment_plan[other_billing_intervals]   = 1_month
 ```
 
-**El precio se envía aquí, en el momento de la compra; no se guarda en el
-producto.** Digistore24 descarta el `data[amount]` del propio producto, y un
-plan de pago guardado no puede llevar un cupón, una prueba gratuita, un upgrade
-ni una comisión de afiliado por enlace. Toma las cifras de la única lista de
-precios de tu proyecto (ver **`ds24-products`**).
+🚨 **Por qué `payment_plan[template]` viaja con la primera forma.** Digistore24
+rechaza una plantilla que no pertenezca al producto para el que se la ha
+llamado, con `payment_plan_not_found` — así que un id de plan que sobrevivió a
+un borrado al otro lado falla **en voz alta**, mientras que `settings[plan]` por
+sí solo se ignoraría en silencio y el comprador se encontraría con el plan que el
+producto tenga. Como no la acompaña ningún `first_amount`, sus valores se
+descartan luego y es el plan guardado el que pone el precio, que es justo lo que
+quieres.
+
+⚠️ **Y ese error se lleva por delante la oferta entera, no una sola tarjeta de
+precio**: el plan pertenece al producto, así que fallan de golpe todos los
+botones de compra de esa oferta, en todos los idiomas. Captura exactamente ese
+error, reintenta una vez sin la plantilla y sin su `settings[plan]`, y deja
+registrado qué plan y qué producto eran. La venta sale adelante a tu propio
+precio; al vendedor se le dice que vuelva a lanzar la sincronización.
+
+🚨 **Nunca envíes `payment_plan[template]` a solas esperando que ponga el precio
+de la llamada.** Sin un `first_amount`, Digistore24 descarta el `payment_plan`
+entero, incluidos los valores que la plantilla había resuelto. Eso es lo correcto
+para la primera forma y es fatal si querías la segunda y se te olvidó un campo.
 
 **`product_id` decide también el IDIOMA del formulario de pedido: elígelo según
 el idioma del comprador.** Un producto de Digistore24 tiene exactamente un
@@ -65,11 +104,14 @@ La respuesta es una URL. **Guárdala en caché por oferta**: vale durante la
 ventana de `valid_until`, y crear una nueva en cada visita mete un viaje de ida
 y vuelta a Digistore24 en el renderizado de tu página de precios.
 
-⚠️ **Entonces la clave de caché tiene que incluir el idioma**, y no solo la
-clave de la oferta. Con una fila por clave, la URL alemana y la inglesa se
-desalojan mutuamente en cada visita y, entre una y otra, la caché sirve la página
-de checkout de un idioma al comprador del otro. Basta con
-`"<offerKey>:<language>"`.
+⚠️ **Entonces la clave de caché tiene que incluir el idioma Y la forma de
+pago**, y no solo la clave de la oferta. Con una fila por clave, la URL alemana
+y la inglesa — o la mensual y la anual, que llevan valores distintos de
+`settings[plan]` — se desalojan mutuamente en cada visita y, entre una y otra, la
+caché sirve la página de checkout de un comprador a otro.
+`"<offerKey>:<paymentOption>:<language>"`. Quita la parte del medio cuando la
+oferta tenga una sola forma de pago, para que nada cambie en una oferta de precio
+único.
 
 🚨 **Y nunca guardes en caché una URL que lleve la identidad de un comprador.**
 El Paso 2 mete el id del miembro con sesión iniciada en `tracking[custom]`, y
@@ -158,10 +200,14 @@ al menos dos causas que en el log se ven idénticas: un comprador tuyo que no
 tenía sesión al hacer clic (no había ningún id de miembro que escribir), y
 alguien que nunca pasó por tu app — el producto de Digistore24 tiene un
 formulario de pedido propio, expuesto en el marketplace una vez aprobado, y una
-compra hecha ahí no lleva nada escrito por ti. La segunda, además, se cobra según
-el plan guardado del **producto**, no según el tuyo (**`ds24-products`**,
-Paso 2). Si quieres distinguirlas, lo que las separa es el importe, no el campo
-de tracking.
+compra hecha ahí no lleva nada escrito por ti.
+
+⚠️ **El importe no las distingue**, y una copia anterior de este pack decía que
+sí. Desde que el producto lleva tus planes de pago (**`ds24-products`**,
+Paso 3), una compra hecha en su propio formulario de pedido paga la misma cifra
+que una hecha por tu enlace — que es justo para lo que se escriben, y te cuesta
+esta heurística. Trata «sin `custom`» como *sin atribuir*, resuélvelo por correo
+electrónico con las dos negativas de más abajo, y nunca por el precio.
 
 Dos negativas son las que hacen que el paso 2 pueda existir sin peligro:
 

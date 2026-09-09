@@ -72,6 +72,12 @@ in either order** — so during an upgrade a customer holds *both* plans, or
 briefly *neither*. Code that takes "their plan" to be the first entry in a list
 shows the wrong plan to every upgrading customer.
 
+⚠️ **A change of billing INTERVAL is not an upgrade in this sense.** Monthly and
+yearly are two ways to pay for one offer (**`ds24-products`** Step 2), so the
+product key is the same before and after and `hasAccess` never wavers. Do not
+build the two-plan handling for that case; it is the move between two different
+OFFERS that needs it.
+
 ## Step 3 — three rules that are not obvious
 
 **A missed payment must not read as an account closure.** When `suspended_at` is

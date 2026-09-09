@@ -80,6 +80,12 @@ mientras dura un upgrade, el cliente tiene *los dos* planes o, por un momento,
 *ninguno*. El código que da por «su plan» la primera entrada de una lista muestra
 el plan equivocado a todos los clientes que suben de plan.
 
+⚠️ **Un cambio de INTERVALO de facturación no es un upgrade en este sentido.**
+Mensual y anual son dos formas de pago de una misma oferta (**`ds24-products`**,
+Paso 2), así que la clave de producto es la misma antes y después y `hasAccess`
+no vacila en ningún momento. No construyas para ese caso el manejo de los dos
+planes: quien lo necesita es el salto entre dos OFERTAS distintas.
+
 ## Paso 3 — tres reglas que no son obvias
 
 **Un pago fallido no debe leerse como el cierre de la cuenta.** Con

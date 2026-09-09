@@ -102,6 +102,13 @@ automatique et démarre un nouvel achat. Les deux événements arrivent **à des
 jours d'intervalle, dans un ordre ou dans l'autre**. Pendant une montée en
 gamme, un client détient donc les deux plans — ou, brièvement, aucun.
 
+⚠️ **Changer l'INTERVALLE de facturation n'est pas un changement de ce genre.**
+Mensuel et annuel sont deux plans de paiement sur un même produit
+(**`ds24-products`**) : la clé de produit ne change pas et le droit d'accès ne
+s'interrompt jamais — c'est l'acheteur qui le fait lui-même, par
+`switch_pay_interval_url`, et cela revient comme un renouvellement ordinaire.
+Cette section parle d'un passage entre deux OFFRES différentes.
+
 Donc : demandez « cette personne a-t-elle le plan X ? » fonctionnalité par
 fonctionnalité. Ne prenez jamais « son plan » pour la première entrée d'une
 liste ; une app qui l'affiche ainsi montre le mauvais plan à chaque client en

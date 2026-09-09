@@ -72,7 +72,7 @@ por uno, con «firma inválida».
 | `ds24-products` | la clave de API, crear productos, registrar la conexión IPN |
 | `ds24-ipn` | el webhook: firma, eventos, idempotencia — y cómo demostrarlo |
 | `ds24-entitlements` | convertir un pedido pagado en «puede usar el producto» |
-| `ds24-checkout` | el enlace de compra, el precio como plan de pago, la página de agradecimiento |
+| `ds24-checkout` | el enlace de compra, seleccionar el plan de pago del producto, la página de agradecimiento |
 | `ds24-tokens` | los créditos de prepago, su consumo, la recarga automática |
 | `ds24-golive` | la comprobación previa, la compra de prueba real y el reembolso que demuestra el resto |
 | `ds24-compliance` | el aviso legal, la política de privacidad, la divulgación de IA que pide el Reglamento de IA de la UE (EU AI Act), la supresión |

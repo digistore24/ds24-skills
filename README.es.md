@@ -132,7 +132,7 @@ de entrada por su nombre, `ds24-billing`.
 | **`ds24-billing`** | el punto de entrada: averigua qué existe ya y arranca la skill que toca a continuación |
 | **`ds24-products`** | la clave de API, crear los productos, registrar la conexión IPN, la aprobación |
 | **`ds24-ipn`** | el webhook: firma, eventos, idempotencia — **y cómo demostrarlo** |
-| **`ds24-checkout`** | el enlace de compra, el precio como plan de pago, llevar la identidad del comprador |
+| **`ds24-checkout`** | el enlace de compra, seleccionar el plan de pago del producto, llevar la identidad del comprador |
 | **`ds24-entitlements`** | el registro de acceso y la única función que la app consulta |
 | **`ds24-tokens`** | créditos de prepago, su consumo, la recarga automática |
 | **`ds24-golive`** | la comprobación previa, la compra de prueba real y el reembolso que demuestra la otra mitad |

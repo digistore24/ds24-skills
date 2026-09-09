@@ -34,7 +34,9 @@ réellement observé**, pas d'une simple coche :
 | `DIGISTORE_IPN_PASSPHRASE` est définie **dans l'environnement déployé** | pas seulement dans un fichier local |
 | `DIGISTORE_API_KEY` est définie dans l'environnement déployé | — |
 | La connexion IPN côté Digistore24 pointe vers le domaine **de production** | pas vers un tunnel ni vers une URL de prévisualisation héritée du développement |
-| Le produit existe et son prix correspond à votre liste de prix | — |
+| Le produit existe, et il porte **un plan de paiement par façon de payer** | pas seulement le produit — un produit sans aucun plan à vous porte celui de Digistore24 |
+| Chaque plan enregistré correspond encore à la liste de prix (montant, devise, intervalle) | un prix modifié et jamais resynchronisé fait retomber le checkout sur une tarification envoyée dans l'appel, en silence |
+| Aucun produit portant votre marque de propriété ne manque dans la liste de prix | **`ds24-products`**, Étape 3b le retirerait |
 | Les secrets sont dans le coffre à secrets de la plateforme | pas dans le dépôt |
 
 La cinquième ligne est celle qui fait mal après un redéploiement : l'URL de
@@ -80,12 +82,17 @@ aussi le côté Digistore24.
    ne peuvent jamais atteindre, donc ne le reprenez pas ici.
 2. Achetez le produit par le lien d'achat de l'app elle-même — pas par un lien
    construit à la main pour le test.
-3. Surveillez : le checkout affiche **votre** prix et votre intervalle ; la
-   page de remerciement se charge ; l'IPN arrive ; la commande est
-   enregistrée ; **l'accès apparaît dans l'app**. Si l'IPN n'arrive pas,
-   `getPurchase` (**`ds24-products`**, Étape 7) dit si Digistore24 a bel et
-   bien enregistré l'achat — c'est ce qui distingue un checkout raté d'une
-   connexion cassée, et l'app seule ne permet pas de les départager.
+3. Surveillez : le checkout affiche **votre** prix et votre intervalle — et
+   uniquement la façon de payer que l'acheteur a choisie, les autres
+   masquées ; la page de remerciement se charge ; l'IPN arrive ; la commande
+   est enregistrée ; **l'accès apparaît dans l'app**.
+   Faites-le **une fois par façon de payer** : un lien mensuel et un lien
+   annuel sélectionnent des plans de paiement différents, et un
+   `settings[plan]` faux ou absent ne se voit nulle part ailleurs. Si l'IPN
+   n'arrive pas, `getPurchase` (**`ds24-products`**, Étape 7) dit si
+   Digistore24 a bel et bien enregistré l'achat — c'est ce qui distingue un
+   checkout raté d'une connexion cassée, et l'app seule ne permet pas de les
+   départager.
 4. Connectez-vous en tant que ce client et confirmez que ce qui a été payé est
    réellement utilisable.
 
@@ -131,12 +138,20 @@ possibles. C'est l'état normal tant que vous construisez.
 
 ⚠️ **L'approbation est un RÉFÉRENCEMENT sur la marketplace : c'est donc aussi
 le moment où le formulaire de commande propre au produit devient trouvable par
-des inconnus.** Ils paient alors le plan de paiement enregistré sur le produit —
-la valeur par défaut de Digistore24, que personne n'a choisie, pas votre prix
-(**`ds24-products`**, Étape 2). Cet achat est bien réel : il arrive sur votre
-IPN, et si votre handler accorde l'accès sur `on_payment`, il l'accorde.
-Demandez l'approbation parce que vous voulez la marketplace, en sachant que
-cela va avec.
+des inconnus.** Ils paient le plan de paiement enregistré sur le produit —
+lequel, une fois que votre synchronisation l'a écrit (**`ds24-products`**,
+Étape 3), est votre propre prix, sur votre propre intervalle. Cet achat est
+bien réel : il arrive sur votre IPN sans aucun `tracking[custom]`, et si votre
+handler accorde l'accès sur `on_payment`, il l'accorde. Demandez l'approbation
+parce que vous voulez la marketplace, en sachant que cela va avec.
+
+🚨 **Vérifiez donc, avant de soumettre, que chaque produit de production PORTE
+bien vos plans.** Un produit pour lequel la synchronisation n'a pas pu écrire
+de plan porte encore celui de Digistore24 par défaut — environ 27 €, en
+paiement unique — et, sur une offre par abonnement, une telle commande envoie
+un seul événement de paiement et jamais de renouvellement : l'acheteur paie
+une fois et garde l'accès pour toujours. Ouvrez le formulaire de commande
+propre à chaque produit et regardez.
 
 **La marketplace à laquelle vous soumettez dépend de la langue du PRODUIT**,
 pas de celle de l'app : un produit en allemand va chez Digistore24 GmbH,
@@ -149,6 +164,12 @@ Digistore24 porte exactement une langue — celle du formulaire de commande de
 l'acheteur, voir **`ds24-products`** — si bien qu'une offre vendue en allemand
 et en anglais fait *deux* produits, soumis à *deux* marketplaces, chacun avec
 son propre verdict.
+
+⚠️ **Les façons de payer ne multiplient PAS ce nombre.** Mensuel et annuel
+sont des plans de paiement sur ces deux mêmes produits : ils n'ajoutent ni
+produit ni approbation. Si vous vous retrouvez avec quatre produits pour une
+offre vendue en deux langues, c'est que la liste de prix n'a pas la bonne
+forme — **`ds24-products`**, Étape 2.
 
 C'est là le piège de cette étape : **approuvé en Allemagne ne dit rien du
 jumeau anglais.** Un affichage d'état qui rend compte par offre et non par

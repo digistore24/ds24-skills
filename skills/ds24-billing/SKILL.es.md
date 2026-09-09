@@ -104,7 +104,8 @@ Busca el síntoma en la tabla en vez de recorrer las skills una por una:
 | un cliente reembolsado sigue teniendo acceso | **`ds24-ipn`** — el evento de reembolso no se gestiona, o un pago reenviado volvió a abrir el acceso |
 | un cliente que pagó se ha quedado sin acceso | **`ds24-ipn`** — la suspensión por un pago fallido nunca se levantó con el pago que la subsanó |
 | la compra no se puede asociar a ninguna cuenta | **`ds24-checkout`** — en el campo tracking no viajó ningún identificador |
-| el checkout muestra un precio equivocado | **`ds24-checkout`** — el plan de pago no viajó con la llamada |
+| el checkout muestra un precio equivocado | **`ds24-checkout`** — se seleccionó el plan de pago equivocado, o no se seleccionó ninguno, o el plan guardado ya no coincide con la lista de precios |
+| existe un producto en Digistore24 que ya no está en la lista de precios | **`ds24-products`**, Paso 3b — retíralo, y nunca ninguno que no lleve tu propia marca de propiedad |
 | el saldo se abonó dos veces | **`ds24-tokens`** — el abono no es idempotente, y Digistore24 reintenta |
 
 ## Paso 4 — dos reglas que valen para todo esto

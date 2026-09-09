@@ -94,7 +94,8 @@ Match the symptom, do not go through the list:
 | a refunded customer still has access | **`ds24-ipn`** — the refund event is not handled, or a redelivered payment reopened it |
 | a customer who paid is locked out | **`ds24-ipn`** — a suspension from a missed payment was never lifted by the payment that answered it |
 | the purchase cannot be matched to an account | **`ds24-checkout`** — nothing identifying travelled in the tracking field |
-| the checkout shows the wrong price | **`ds24-checkout`** — the payment plan did not travel with the call |
+| the checkout shows the wrong price | **`ds24-checkout`** — the wrong payment plan was selected, or none was, or the stored plan no longer matches the price list |
+| a product exists at Digistore24 that is not in the price list any more | **`ds24-products`** Step 3b — remove it, and only ever one your own ownership mark names |
 | the balance was credited twice | **`ds24-tokens`** — the credit is not idempotent, and Digistore24 retries |
 
 ## Step 4 — two rules that hold across all of it

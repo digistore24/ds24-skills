@@ -57,57 +57,94 @@ significa crear otra nueva y sustituirla en todas partes.
 
 ## Paso 2 — una lista de precios, en tu app
 
-**Guarda los planes en un único archivo del proyecto** — clave, nombre visible,
-precio en céntimos, moneda, intervalo de facturación — y haz que todo lea de
+**Guarda los planes en un único archivo del proyecto** y haz que todo lea de
 ahí: la página de precios, el checkout, la comprobación del derecho de acceso.
+Una entrada por **oferta**, y dentro de ella una entrada por **forma de pago**.
 
-El precio **no** vive en el producto de Digistore24. Su API descarta
-`data[amount]` en `createProduct`/`updateProduct` («obsoleto — crea un plan de
-pago en su lugar»), y un plan de pago guardado en Digistore24 es fijo: las
-pruebas gratuitas, los upgrades, los downgrades, los cupones y las comisiones
-de afiliado por enlace solo funcionan si el plan viaja con la llamada de
-checkout. Por eso el precio se entrega a `createBuyUrl` en el momento de la
-compra — lo explica la skill **`ds24-checkout`**.
+🚨 **Mensual y anual son dos formas de pago de UNA oferta, no dos ofertas.** Es
+la decisión de forma con más consecuencias de toda esta skill. Un registro que
+las convierte en dos entradas las convierte en dos claves de producto, y a
+partir de ahí cada comprobación de acceso de la app tiene que nombrar las dos:
+`hasAccess(m, "pro_monthly") || hasAccess(m, "pro_yearly")`, en cada puerta,
+para siempre. El que se escribe con una sola clave rechaza en silencio a la
+mitad de los compradores, detrás de una página que se renderiza sin problemas.
+Mantenlas bajo una única clave y la pregunta sigue siendo una sola pregunta.
 
-Un precio, un solo sitio. Una segunda lista en el código es una lista que
-tarde o temprano se desvía.
+En Digistore24 los dos ejes se comportan de forma distinta, y este es el motivo:
 
-🚨 **Pero el producto no se queda sin plan: Digistore24 le asigna uno por
-defecto.** (Unos 27 €, pago único, visto en una cuenta real en septiembre de
-2026; mira el producto del vendedor en lugar de fiarte de esa cifra. Lo que no
-cambia es que *algún* plan hay.) Tu app nunca lo cobra: el plan que viaja con
-la llamada a `createBuyUrl` gana siempre al guardado. Lo que *sí* lo cobra es el
-**formulario de pedido propio** del producto, que existe desde que existe el
-producto — y que, tras la aprobación del marketplace (**`ds24-golive`**), es
-algo que encuentran desconocidos.
+| eje | lo que cuesta |
+|---|---|
+| **idioma** | un PRODUCTO por cada uno — el idioma del formulario de pedido es una propiedad del producto (Paso 3) |
+| **forma de pago** | un PLAN DE PAGO por cada una, sobre ese mismo producto |
+
+```
+pro:
+  name: "Pro"
+  paymentOptions:                     # un plan de pago por cada una
+    monthly: { priceCents: 3900,  billingInterval: 1_month }
+    yearly:  { priceCents: 39000, billingInterval: 12_month }
+  productIds:                         # un producto de Digistore24 por idioma
+    de: null
+    en: null
+  payplanIds:                         # los escribe tu sincronización
+    de: { monthly: null, yearly: null }
+    en: { monthly: null, yearly: null }
+```
+
+### Dónde vive el precio
+
+**Tu archivo es el original. Digistore24 recibe una copia, en forma de planes
+de pago.**
+
+`data[amount]` en el producto está obsoleto y se descarta, así que el precio no
+se fija nunca en el producto mismo — lo dice la propia API en su aviso: *«crea
+un plan de pago en su lugar»*. Para eso están `createPaymentplan` /
+`updatePaymentplan`, y tu sincronización escribe uno por cada forma de pago
+(Paso 3).
+
+⚠️ **Puede que hayas leído lo contrario en una copia anterior de este pack**,
+que decía que había que mantener todos los precios fuera de Digistore24 y
+enviarlos con cada llamada a `createBuyUrl`. El razonamiento era: un plan
+guardado es un segundo sitio para el precio, y no sabe hacer pruebas gratuitas,
+upgrades ni cupones. La mitad de eso era cierto. Lo que se le escapaba es que
+**tu enlace de checkout no es la única entrada al producto**:
+
+- el producto tiene un **formulario de pedido propio**, que ningún enlace tuyo
+  toca;
+- un **afiliado** puede mandar tráfico directamente a él;
+- el comprador puede **cambiar su intervalo de facturación** desde dentro de su
+  compra (`switch_pay_interval_url`, en cada IPN) — y eso cambia a otro plan
+  *guardado*, así que sin ninguno no hay a qué cambiar.
+
+Los tres cobran los planes que cuelguen del producto. Un producto sin ningún
+plan tuyo no se queda sin plan: **Digistore24 le asigna uno por defecto** —
+unos 27 €, pago único, visto en una cuenta real en septiembre de 2026; mira el
+producto del vendedor en lugar de fiarte de esa cifra. En una oferta de
+**suscripción**, un pedido así envía exactamente un evento de pago y ninguna
+renovación ni cancelación, así que el comprador paga una vez y conserva el
+acceso **para siempre**.
+
+Escribir los planes es lo que cierra eso. Es la segunda razón de esta forma; la
+primera es que ahora una oferta necesita un producto en vez de dos.
 
 De ahí se siguen dos cosas, y ambas son fáciles de pasar por alto:
 
-- **Avisa al vendedor antes de que abra su backoffice.** Verá un precio que
-  nunca fijó, junto a un producto que su app vende por otro importe. Si se lo
-  dices antes, es una curiosidad; si lo descubre por su cuenta, parece un
-  fallo, y el arreglo que se le ocurrirá es una segunda lista de precios.
-- **Decide de forma deliberada qué hace tu handler de IPN con una compra hecha
-  por esa vía.** No lleva `tracking[custom]`, su precio es el del plan del
-  producto y no el tuyo, y si tu oferta es una **suscripción** enviará
-  exactamente un evento de pago — ninguna renovación, ninguna cancelación, así
-  que nada de lo que cuelgues de esos eventos se disparará nunca para ella. El
-  Paso 2 de **`ds24-checkout`** explica por qué la ausencia de `custom`, por sí
-  sola, no basta para saber que ha pasado esto.
+- **Dile al vendedor qué va a ver en su backoffice**: sus propios precios, un
+  plan por cada forma de pago — **como copia**. Cambia un precio en la app y
+  sincroniza; cámbialo allí y la siguiente sincronización lo vuelve a cambiar.
+  Un vendedor al que no se le dice esto edita la copia equivocada una vez y
+  concluye que la app se olvida de los precios.
+- **Una compra hecha en el formulario de pedido propio del producto sigue sin
+  llevar `tracking[custom]`**, así que tu handler de IPN tiene que atribuirla
+  por otra vía (el Paso 2 de **`ds24-checkout`** explica por qué la ausencia de
+  `custom`, por sí sola, no demuestra que haya pasado eso). Lo que ha cambiado
+  es que ya no se cobra a un precio distinto del tuyo, y ya no es una
+  suscripción que nunca se renueva.
 
 **Si tu app habla más de un idioma, la entrada guarda un id de producto por
 idioma**, no uno solo. El motivo está en el Paso 3; acierta con la forma ya
 aquí, porque cambiarla después de la primera venta significa productos nuevos
-y aprobaciones nuevas:
-
-```
-pro:
-  name:      "Pro"
-  priceCents: 3900
-  productIds:            # un producto de Digistore24 por idioma
-    de: null
-    en: null
-```
+y aprobaciones nuevas.
 
 **Y si la app tiene más de un entorno, mantén un CONJUNTO de productos por
 entorno** (dev / prod — staging solo si existe de verdad). Los productos que
@@ -122,11 +159,43 @@ eso está bien.
 
 ## Paso 3 — crea los productos
 
-`createProduct` / `updateProduct` con el nombre, la descripción y **`language`**.
-Escribe el id de producto que devuelve en tu lista de precios, para que la
-correspondencia quede registrada y no haya que deducirla otra vez.
+Dos llamadas por producto, en este orden:
+
+1. `createProduct` / `updateProduct` con el nombre, la descripción y
+   **`language`**. Escribe el id de producto que devuelve en tu lista de
+   precios, para que la correspondencia quede registrada y no haya que
+   deducirla otra vez.
+2. `createPaymentplan` / `updatePaymentplan` **una vez por cada forma de
+   pago**, con `product_id`, `first_amount`, `currency`,
+   `first_billing_interval`, `other_amounts`, `other_billing_intervals`,
+   `number_of_installments` (`0` = suscripción indefinida, `1` = pago único) y
+   `position`. Escribe también el `paymentplan_id` que devuelve.
+
+   Pon `is_switching_allowed = Y` cuando la oferta tenga más de una forma de
+   pago: eso es lo que hace que el propio `switch_pay_interval_url` de
+   Digistore24 lleve a alguna parte, y te ahorra construir un flujo de upgrade
+   para el cambio más habitual que hace un suscriptor.
+
+⚠️ **Haz las dos juntas, no en dos pasadas.** Un producto que existe sin sus
+planes tiene el plan por defecto de ~27 € de Digistore24 y un formulario de
+pedido que lo cobra; la ventana en la que eso es cierto debería medir una sola
+llamada de la API.
+
+🚨 **Y escribe de paso una MARCA DE PROPIEDAD.** Tanto `createProduct` como
+`updateProduct` aceptan `data[note]`, una nota interna libre que ningún
+comprador ve. Pon ahí una línea legible por máquina — el id propio de tu app,
+la clave de producto, el idioma, el entorno — y conserva lo demás que haya
+escrito el vendedor. Sin ella no hay respuesta honesta a «¿este producto lo
+creamos NOSOTROS?», y el Paso 3b necesita una. No deduzcas ese id del nombre de
+la app (los vendedores cambian de nombre) ni del nombre interno del producto
+(dos apps construidas con la misma plantilla chocan en él): genéralo una vez,
+guárdalo junto a la lista de precios y no lo regeneres nunca.
 
 ### Un producto por oferta Y por idioma — aquí es donde la gente se equivoca
+
+*(Y, por decirlo una vez más donde es más fácil invertirlo: un producto por
+IDIOMA, un plan de pago por FORMA DE PAGO. El eje del idioma multiplica los
+productos; la forma de pago no.)*
 
 **Un producto de Digistore24 lleva exactamente UN idioma, y es el idioma del
 FORMULARIO DE PEDIDO que rellena tu comprador**: las etiquetas de los campos,
@@ -172,26 +241,64 @@ idioma** — y, si mantienes conjuntos separados por entorno, **más el entorno*
 Nunca uses como clave el nombre visible, que es el mismo en ambos idiomas y
 cambia con los textos.
 
-**Borrar un producto de tu lista no lo retira de la venta.** Un producto que
-Digistore24 ya conoce se puede seguir comprando hasta que el usuario lo
-desactive allí. Dilo en voz alta cuando quites uno.
+**Borrar un producto de tu lista no lo retira de la venta por sí solo.** El
+producto que Digistore24 ya conoce se puede seguir comprando — por su propio
+formulario de pedido y por cualquier enlace de checkout que exista — hasta que
+algo lo retire. De eso trata el Paso 3b.
 
-🚨 **Lo que significa que el momento de preguntar es ANTES de crear, no
-después.** No existe ninguna llamada de la API que deshaga un `createProduct`.
-Una vez ejecutada la sincronización, cada entrada que encontró es un producto
-real en la cuenta del usuario, y quitar uno es trabajo manual en el backoffice
-de Digistore24 — producto por producto, idioma por idioma. Una lista de precios
-que todavía arrastre las entradas que esbozaste mientras diseñabas la oferta
-las publicará todas.
+🚨 **Y por eso el momento de preguntar es ANTES de crear, no después.**
+`deleteProduct(product_id)` existe, así que esto no es definitivo como decía una
+copia anterior de este pack. Pero solo es limpio mientras el producto **no haya
+vendido nunca**: uno que ya ha cobrado dinero solo se puede desactivar, porque
+los reembolsos, los contracargos y las cancelaciones de sus compradores siguen
+llegando como IPNs que nombran su id y tu handler tiene que seguir
+recibiéndolos. Un producto que ha cobrado dinero es una decisión con la que el
+vendedor se queda.
 
 Así que la primera vez que tu sincronización vaya a crear algo: **imprime lo
-que se crearía, con su nombre, avisa al usuario de que no se puede deshacer y
-espera un sí.** Después crea. Las ejecuciones siguientes ya tienen los ids
+que se crearía, con su nombre, di lo que cuesta y espera un sí.** Después crea. Las ejecuciones siguientes ya tienen los ids
 guardados y no crean nada, así que es una pregunta en un único momento, no un
 aviso que la gente aprende a cerrar sin leer. Si algunas entradas son
 borradores y no ofertas, dale a tu lista un marcador que las deje fuera de la
 sincronización, en vez de pedirle al usuario que borre un texto que todavía
 quiere.
+
+## Paso 3b — retira lo que ya no se ofrece
+
+Una entrada que sale de la lista de precios deja un producto detrás. Limpiarlos
+merece la pena — una cuenta que se va llenando de productos abandonados es la
+forma en que un vendedor acaba vendiendo algo de lo que ya se había olvidado —
+y es el único paso en el que equivocarse destruye el trabajo de otra persona.
+
+**No actúes nunca sobre otra cosa que tu propia marca de propiedad** (Paso 3).
+Ni sobre el nombre del producto, ni sobre el nombre interno, ni sobre la
+carpeta: en la cuenta de un vendedor hay productos anteriores a que tu app
+existiera, productos de una segunda app construida igual y productos que un
+agente de soporte creó a mano. «Seguramente es nuestro» no basta para borrar.
+
+Después, por cada producto que lleve tu marca y ya no esté en la lista de
+precios:
+
+1. **Pregunta si tiene ventas** (`listPurchases` con su `product_id`). Si no
+   puedes preguntarlo, dalo por «las tiene»: el error barato es un producto
+   inactivo de más.
+2. **Sin ventas → `deleteProduct`.** Si falla por lo que sea, pasa al punto
+   siguiente.
+3. **Con ventas, o si el borrado falló → `updateProduct` con
+   `data[is_active] = N`.** El producto deja de poder comprarse y se queda en
+   la cuenta. Dile al vendedor que su entrada debería quedarse en la lista de
+   precios como entrada aparcada, o su id saldrá de tu registro de IPN y los
+   reembolsos de sus compradores dejarán de llegar.
+
+🚨 **Y no hagas absolutamente nada si no pudiste leer las notas.** Si el listado
+de productos volvió sin ellas, la propiedad no se puede establecer, y «cero
+productos que retirar» no es entonces una respuesta: es silencio. Dilo y para.
+Demostrar que el recorrido se hizo no es demostrar que la comparación se hizo.
+
+**Siempre detrás de un marcador explícito.** A diferencia de crear, esta no es
+una pregunta de la primera ejecución: una clave renombrada o una errata en la
+lista de precios borrarían un producto vivo en una sincronización cualquiera.
+Enumera lo que se iría, no cambies nada y deja que sea el usuario quien lo pida.
 
 ## Paso 4 — registra la conexión IPN
 
@@ -344,7 +451,7 @@ que llegó.
 
 - **`ds24-ipn`** — el endpoint que recibe los eventos (constrúyelo ahora si no
   existe).
-- **`ds24-checkout`** — el enlace de compra, con el precio incorporado.
+- **`ds24-checkout`** — el enlace de compra, eligiendo la forma de pago.
 - **`ds24-golive`** — la compra de prueba que demuestra la cadena entera.
 
 Di cuál vas a empezar y empiézala.

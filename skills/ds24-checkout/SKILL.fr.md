@@ -1,7 +1,7 @@
 ---
 name: ds24-checkout
 language: fr
-description: À utiliser pour construire le bouton d'achat, la page de tarifs ou le lien de checkout d'un produit Digistore24 — créer une URL d'achat signée avec createBuyUrl, y attacher le prix sous forme de plan de paiement, faire suivre l'identité de l'acheteur jusqu'à l'IPN, et la page de remerciement. À utiliser dès que l'utilisateur parle d'un lien d'achat, d'un checkout, d'une page de tarifs, demande « comment le client paie-t-il ? », ou signale un achat arrivé sans que personne puisse dire à qui il appartient.
+description: À utiliser pour construire le bouton d'achat, la page de tarifs ou le lien de checkout d'un produit Digistore24 — créer une URL d'achat signée avec createBuyUrl, sélectionner le plan de paiement du produit correspondant à la façon de payer choisie, faire suivre l'identité de l'acheteur jusqu'à l'IPN, et la page de remerciement. À utiliser dès que l'utilisateur parle d'un lien d'achat, d'un checkout, d'une page de tarifs, demande « comment le client paie-t-il ? », ou signale un achat arrivé sans que personne puisse dire à qui il appartient.
 ---
 
 > **Français** · Original en anglais — [`SKILL.md`](SKILL.md) · [Español](SKILL.es.md)
@@ -32,7 +32,32 @@ POST https://www.digistore24.com/api/call/createBuyUrl/format/json
 Header: X-DS-API-KEY: <la clé>
 ```
 
-Le corps (form-encoded), réduit aux paramètres qui comptent :
+Le corps (form-encoded) : il y a **deux formes**, et celle que vous envoyez
+dépend de ce que le prix de l'offre est déjà, ou non, un plan de paiement sur le
+produit (l'Étape 3 de **`ds24-products`** les écrit, un par façon de payer).
+
+**Le cas ordinaire — vendre par le plan stocké :**
+
+```
+product_id                = 512345
+valid_until               = 24h
+settings[plan]            = 991      # le plan de paiement de CETTE façon de payer
+settings[hide_plans]      = Y        # l'acheteur a déjà choisi sur votre page
+payment_plan[template]    = 991      # voir plus bas — envoyé pour être VALIDÉ, pas pour fixer le prix
+```
+
+Aucun montant. C'est le plan stocké qui fixe le prix de la vente, et c'est ce
+qui fait que votre page, le formulaire de commande propre au produit et le
+changement d'intervalle fait par l'acheteur lui-même facturent tous la même
+somme.
+
+**L'exception — fixer le prix ici.** Trois cas, et seulement ceux-là :
+
+| | |
+|---|---|
+| une **montée ou une descente en gamme** (`payment_plan[upgrade_order_id]`) | le prix n'existe que pour cet acheteur, en regard d'un achat qu'il détient déjà ; il n'y a rien où le stocker |
+| un **essai gratuit** (`payment_plan[test_interval]`) | même forme |
+| un plan stocké qui **ne correspond plus à votre liste de prix** | quelqu'un a modifié un prix sans synchroniser — envoyez votre propre chiffre, pas un chiffre périmé |
 
 ```
 product_id                              = 512345
@@ -45,11 +70,27 @@ payment_plan[first_billing_interval]    = 1_month  # à omettre complètement po
 payment_plan[other_billing_intervals]   = 1_month
 ```
 
-**Le prix part ici, au moment de l'achat — il n'est pas stocké sur le produit.**
-Digistore24 ignore `data[amount]` sur le produit lui-même, et un plan de paiement
-stocké ne sait porter ni bon de réduction, ni essai gratuit, ni montée en gamme,
-ni commission d'affiliation par lien. Prenez les montants dans l'unique liste de
-prix de votre projet (voir **`ds24-products`**).
+🚨 **Pourquoi `payment_plan[template]` accompagne la première forme.**
+Digistore24 refuse un template qui n'appartient pas au produit pour lequel
+l'appel est fait, avec `payment_plan_not_found` — un id de plan qui a survécu à
+une suppression là-bas échoue donc **bruyamment**, là où `settings[plan]` seul
+serait ignoré en silence et où l'acheteur se retrouverait devant le plan que le
+produit a réellement. Comme aucun `first_amount` ne l'accompagne, ses valeurs
+sont ensuite écartées et c'est le plan stocké qui fixe le prix — exactement ce
+que vous voulez.
+
+⚠️ **Et cette erreur emporte l'offre entière, pas une seule carte de prix** : le
+plan appartient au produit, donc tous les boutons d'achat de cette offre — dans
+toutes les langues — échouent d'un coup. Interceptez précisément cette erreur,
+réessayez une fois sans le template et sans son `settings[plan]`, et journalisez
+quel plan et quel produit étaient en cause. La vente aboutit à votre propre
+prix ; le vendeur, lui, s'entend dire de relancer la synchronisation.
+
+🚨 **N'envoyez jamais `payment_plan[template]` seul en espérant qu'il fixe le
+prix de l'appel.** Sans `first_amount`, Digistore24 écarte tout le
+`payment_plan` — y compris les valeurs que le template avait résolues. C'est ce
+qu'il faut pour la première forme, et c'est fatal si vous vouliez la seconde et
+avez oublié un champ.
 
 **`product_id` fixe aussi la LANGUE du formulaire de commande — choisissez-le
 d'après la langue de l'acheteur.** Un produit Digistore24 n'a qu'une seule
@@ -68,11 +109,14 @@ pendant la fenêtre `valid_until`, et en recréer une à chaque affichage de pag
 c'est faire dépendre chaque affichage de votre page de tarifs d'un aller-retour
 vers Digistore24.
 
-⚠️ **La clé de cache doit alors inclure la langue**, et pas seulement la clé
-de l'offre. Une seule ligne par clé, et l'URL allemande et l'URL anglaise se
-chassent l'une l'autre à chaque affichage de page ; entre deux, le cache sert la
-page de checkout d'une langue à l'acheteur de l'autre. `"<offerKey>:<language>"`
-suffit.
+⚠️ **La clé de cache doit alors inclure la langue ET la façon de payer**, et pas
+seulement la clé de l'offre. Une seule ligne par clé, et l'URL allemande et
+l'URL anglaise — ou la mensuelle et l'annuelle, qui portent des `settings[plan]`
+différents — se chassent l'une l'autre à chaque affichage de page ; entre deux,
+le cache sert la page de checkout d'un acheteur à un autre.
+`"<offerKey>:<paymentOption>:<language>"`. Laissez tomber la partie du milieu là
+où l'offre n'a qu'une seule façon de payer : rien ne change ainsi pour une offre
+à prix unique.
 
 🚨 **Et ne mettez jamais en cache une URL qui porte l'identité d'un acheteur.**
 L'Étape 2 place l'id du membre connecté dans `tracking[custom]`, or un cache
@@ -162,9 +206,15 @@ vos acheteurs qui n'était pas connecté au moment du clic (vous n'aviez aucun i
 de membre à écrire), et quelqu'un qui n'est jamais passé par votre app — le
 produit Digistore24 a son propre formulaire de commande, présent sur une
 marketplace une fois approuvé, et un achat fait là-bas ne porte rien de ce que
-vous écrivez. Le second est en outre facturé au plan stocké sur le **produit**,
-et non au vôtre (**`ds24-products`**, Étape 2). Pour distinguer les deux, c'est
-le montant qui fait la différence, pas le champ tracking.
+vous écrivez.
+
+⚠️ **Le montant ne permet pas de les distinguer**, et une copie plus ancienne de
+ce pack affirmait le contraire. Dès que le produit porte vos plans de paiement
+(**`ds24-products`**, Étape 3), un achat passé sur son propre formulaire de
+commande paie la même somme qu'un achat passé par votre lien — c'est bien pour
+cela qu'on les écrit, et cela vous coûte cette heuristique. Traitez « pas de
+`custom` » comme *non attribué*, résolvez-le par e-mail sous les deux refus
+ci-dessous, et jamais par le prix.
 
 Ce sont deux refus qui rendent l'étape 2 tenable :
 

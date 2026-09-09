@@ -63,7 +63,7 @@ and whose every real payment is refused as "signature invalid".
 | `ds24-products` | the API key, creating products, registering the IPN connection |
 | `ds24-ipn` | the webhook: signature, events, idempotency — and how to prove it |
 | `ds24-entitlements` | turning a paid order into "may use the product" |
-| `ds24-checkout` | the buy link, the price as a payment plan, the thank-you page |
+| `ds24-checkout` | the buy link, selecting the product's payment plan, the thank-you page |
 | `ds24-tokens` | prepaid credits, spending them, automatic top-up |
 | `ds24-golive` | pre-flight, the real test purchase, and the refund that proves the rest |
 | `ds24-compliance` | imprint, privacy policy, the EU AI Act disclosure, deletion |

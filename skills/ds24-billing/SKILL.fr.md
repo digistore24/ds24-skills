@@ -109,7 +109,8 @@ Partez du symptôme, ne parcourez pas la liste :
 | un client remboursé a toujours l'accès | **`ds24-ipn`** — l'événement de remboursement n'est pas traité, ou un paiement livré une seconde fois l'a rouvert |
 | un client qui a payé n'a plus accès | **`ds24-ipn`** — une suspension consécutive à un paiement manqué n'a jamais été levée par le paiement qui y répondait |
 | l'achat ne peut être rattaché à aucun compte | **`ds24-checkout`** — rien d'identifiant n'a été transmis dans le champ tracking |
-| le checkout affiche le mauvais prix | **`ds24-checkout`** — le plan de paiement n'a pas été transmis avec l'appel |
+| le checkout affiche le mauvais prix | **`ds24-checkout`** — le mauvais plan de paiement a été sélectionné, ou aucun ne l'a été, ou le plan enregistré ne correspond plus à la liste de prix |
+| un produit existe chez Digistore24 alors qu'il ne figure plus dans la liste de prix | **`ds24-products`**, Étape 3b — retirez-le, et jamais qu'un produit que votre propre marque de propriété désigne |
 | le solde a été crédité deux fois | **`ds24-tokens`** — le crédit n'est pas idempotent, et Digistore24 réessaie |
 
 ## Étape 4 — deux règles qui valent partout

@@ -1,6 +1,6 @@
 ---
 name: ds24-checkout
-description: Use when building the buy button, pricing page or checkout link for a Digistore24 product — creating a signed buy URL with createBuyUrl, attaching the price as a payment plan, carrying the buyer's identity through to the IPN, and the thank-you page. Use it whenever the user mentions a buy link, checkout, pricing page, "how does the customer pay", or a purchase that arrives without anybody being able to tell whose it was.
+description: Use when building the buy button, pricing page or checkout link for a Digistore24 product — creating a signed buy URL with createBuyUrl, selecting the product's payment plan for the chosen way to pay, carrying the buyer's identity through to the IPN, and the thank-you page. Use it whenever the user mentions a buy link, checkout, pricing page, "how does the customer pay", or a purchase that arrives without anybody being able to tell whose it was.
 ---
 
 # The checkout link
@@ -27,7 +27,31 @@ POST https://www.digistore24.com/api/call/createBuyUrl/format/json
 Header: X-DS-API-KEY: <the key>
 ```
 
-Body (form-encoded), the parts that matter:
+Body (form-encoded), and there are **two shapes** — which one you send depends
+on whether the offer's price is already a payment plan on the product
+(**`ds24-products`** Step 3 writes them, one per way to pay).
+
+**The ordinary case — sell through the stored plan:**
+
+```
+product_id                = 512345
+valid_until               = 24h
+settings[plan]            = 991      # the payment plan for THIS way to pay
+settings[hide_plans]      = Y        # the buyer already chose on your page
+payment_plan[template]    = 991      # see below — sent to be VALIDATED, not to price
+```
+
+No amounts at all. The stored plan prices the sale, which is what makes your
+page, the product's own order form and the buyer's own interval switch charge
+the same number.
+
+**The exception — price it here.** Three cases, and only these:
+
+| | |
+|---|---|
+| an **upgrade or downgrade** (`payment_plan[upgrade_order_id]`) | the price exists for this buyer against a purchase they already hold; there is nothing to store it in |
+| a **free trial** (`payment_plan[test_interval]`) | same shape |
+| a stored plan that **no longer matches your price list** | somebody edited a price and did not sync — send your own number, not a stale one |
 
 ```
 product_id                              = 512345
@@ -40,11 +64,24 @@ payment_plan[first_billing_interval]    = 1_month  # omit entirely for a one-off
 payment_plan[other_billing_intervals]   = 1_month
 ```
 
-**The price is sent here, at purchase time — not stored on the product.**
-Digistore24 discards `data[amount]` on the product itself, and a stored payment
-plan cannot carry a voucher, a trial, an upgrade or a per-link affiliate
-commission. Read the numbers from the one price list in your project (see
-**`ds24-products`**).
+🚨 **Why `payment_plan[template]` travels with the first shape.** Digistore24
+refuses a template that does not belong to the product it was called for, with
+`payment_plan_not_found` — so a plan id that survived a deletion over there
+fails **loudly**, where `settings[plan]` alone would be ignored in silence and
+the buyer would meet whatever plan the product does have. Because no
+`first_amount` accompanies it, its values are then dropped again and the stored
+plan does the pricing, which is what you want.
+
+⚠️ **And that error takes out the whole offer, not one card**: the plan belongs
+to the product, so every buy button of that offer — every language — fails at
+once. Catch exactly that error, retry once without the plan and its
+`settings[plan]`, and log which plan and which product. The sale goes through at
+your own price; the vendor gets told to re-run the sync.
+
+🚨 **Never send `payment_plan[template]` alone hoping it prices the call.**
+Without a `first_amount` Digistore24 discards the entire `payment_plan` — the
+template's resolved values included. That is right for the first shape and
+fatal if you meant the second and forgot a field.
 
 **`product_id` also decides the LANGUAGE of the order form — pick it by the
 buyer's language.** A Digistore24 product carries exactly one language, and
@@ -60,10 +97,13 @@ The response is a URL. **Cache it per offering** — it is valid for the
 `valid_until` window, and creating a fresh one on every page view is a
 round-trip to Digistore24 in the path of your pricing page.
 
-⚠️ **Then the cache key has to include the language**, not just the offer key.
-One row per key means the German and the English URL evict each other on every
-page view and, in between, the cache serves one language's checkout page to the
-other language's buyer. `"<offerKey>:<language>"` is enough.
+⚠️ **Then the cache key has to include the language AND the way to pay**, not
+just the offer key. One row per key means the German and the English URL — or
+the monthly and the yearly one, which carry different `settings[plan]` values —
+evict each other on every page view and, in between, the cache serves one
+buyer's checkout page to another. `"<offerKey>:<paymentOption>:<language>"`.
+Drop the middle part where the offer has only one way to pay, so nothing about
+a single-price offer changes.
 
 🚨 **And never cache a URL that carries a buyer's identity.** Step 2 puts the
 signed-in member's id into `tracking[custom]`, and a cache keyed on the offer has
@@ -143,9 +183,14 @@ has at least two causes that look identical in the log: a buyer of yours who was
 signed out when they clicked (you had no member id to write), and somebody who
 never went through your app at all — the Digistore24 product has an order form of
 its own, on a marketplace once approved, and a purchase made there carries
-nothing you wrote. The second one is also priced by the **product's** stored
-plan rather than by yours (**`ds24-products`**, Step 2). If you want to tell them
-apart, the amount is what distinguishes them, not the tracking field.
+nothing you wrote.
+
+⚠️ **The amount does not tell them apart**, and an older copy of this pack said
+it did. Once the product carries your payment plans (**`ds24-products`**,
+Step 3), a purchase on its own order form pays the same number as one through
+your link — which is the point of writing them, and it costs you this
+heuristic. Treat "no `custom`" as *unattributed*, resolve it by e-mail under the
+two refusals below, and never by price.
 
 Two refusals are what make step 2 safe to have at all:
 

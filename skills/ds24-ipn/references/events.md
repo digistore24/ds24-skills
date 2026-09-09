@@ -93,6 +93,12 @@ A Digistore24 plan switch stops the old rebilling and starts a new purchase. The
 two events arrive **days apart, in either order**. During an upgrade a customer
 therefore holds both plans — or, briefly, neither.
 
+⚠️ **Changing the billing INTERVAL is not such a switch.** Monthly and yearly are
+two payment plans on one product (**`ds24-products`**), so the product key does
+not change and the entitlement never lapses — the buyer does it themselves
+through `switch_pay_interval_url`, and it comes back as an ordinary rebill. This
+section is about a move between two different OFFERS.
+
 So: ask "does this person have plan X?" per feature. Never take "their plan" to
 be the first entry in a list; an app that renders it that way shows the wrong
 plan to every upgrading customer.

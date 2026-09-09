@@ -30,7 +30,9 @@ tick:
 | `DIGISTORE_IPN_PASSPHRASE` is set **in the deployed environment** | not just in a local file |
 | `DIGISTORE_API_KEY` is set in the deployed environment | — |
 | The IPN connection at Digistore24 points at the **live** domain | not at a tunnel or a preview URL from development |
-| The product exists and its price matches your price list | — |
+| The product exists, and it carries **one payment plan per way to pay** | not just the product — a product with no plan of yours has Digistore24's own |
+| Each stored plan still matches the price list (amount, currency, interval) | a price edited and never synced makes the checkout fall back to inline pricing, silently |
+| No product carrying your ownership mark is missing from the price list | **`ds24-products`** Step 3b would remove it |
 | Secrets are in the platform's secret store | not in the repository |
 
 The fifth row is the one that bites after a redeploy: a preview URL from
@@ -73,8 +75,12 @@ only one that exercises Digistore24's side too.
    customers can never reach, so do not carry it over here.
 2. Buy the product through the app's own buy link — not a link you constructed
    by hand for the test.
-3. Watch for: the checkout shows **your** price and interval; the thank-you page
-   loads; the IPN arrives; the order is stored; **access appears in the app**.
+3. Watch for: the checkout shows **your** price and interval — and only the one
+   way to pay the buyer chose, with the others hidden; the thank-you page loads;
+   the IPN arrives; the order is stored; **access appears in the app**.
+   Do this **once per way to pay**: a monthly link and a yearly link select
+   different payment plans, and a wrong or missing `settings[plan]` shows up
+   nowhere else.
    If the IPN does not arrive, `getPurchase` (**`ds24-products`**, Step 7) says
    whether Digistore24 recorded the purchase at all — that is the difference
    between a failed checkout and a broken connection, and you cannot tell them
@@ -118,11 +124,18 @@ Until approval, test purchases by the vendor are the only purchases possible.
 That is the correct state to be in while building.
 
 ⚠️ **Approval is a marketplace LISTING, so it is also the moment the product's
-own order form becomes something strangers find.** They then pay the product's
-stored payment plan — Digistore24's default, which nobody set, not your price
-(**`ds24-products`**, Step 2). That purchase is a real one: it arrives at your
-IPN, and if your handler grants on `on_payment` it grants. Approve because the
-marketplace is wanted, and know that this comes with it.
+own order form becomes something strangers find.** They pay the product's stored
+payment plan — which, once your sync has written it (**`ds24-products`** Step 3),
+is your own price, on your own interval. That purchase is a real one: it arrives
+at your IPN carrying no `tracking[custom]`, and if your handler grants on
+`on_payment` it grants. Approve because the marketplace is wanted, and know that
+this comes with it.
+
+🚨 **So check, before you submit, that every live product HAS your plans.** One
+the sync could not write a plan for still has Digistore24's own default — about
+27 €, single payment — and on a subscription offer such an order sends one
+payment event and never a renewal: the buyer pays once and keeps the access for
+ever. Open each product's own order form and look.
 
 **Which marketplace you submit to follows the PRODUCT's language**, not the
 app's: a German product goes to Digistore24 GmbH, Germany (`siteowner_id` 1),
@@ -134,6 +147,11 @@ English offering to the German reseller.
 carries exactly one language — that is the language of the buyer's order form,
 see **`ds24-products`** — so an offer sold in German and English is *two*
 products, submitted to *two* marketplaces, each getting its own verdict.
+
+⚠️ **The ways to pay do NOT multiply this.** Monthly and yearly are payment
+plans on those same two products, so they add no products and no approvals. If
+you find yourself with four products for one offer sold in two languages, the
+price list has the wrong shape — **`ds24-products`** Step 2.
 
 That is the trap of this step: **approved in Germany says nothing about the
 English twin.** A status display that reports per offer instead of per product
