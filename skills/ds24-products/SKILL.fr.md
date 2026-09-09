@@ -96,6 +96,13 @@ pro:
     en: { monthly: null, yearly: null }
 ```
 
+⚠️ **Ce qui VÉRIFIE ce fichier doit lire le prix sur la façon de payer, pas sur
+l'offre.** Une offre qui déclare `paymentOptions` n'a pas de `priceCents` à
+elle, si bien qu'un validateur écrit contre l'ancienne forme annonce à toute
+liste de prix correcte qu'elle n'a pas de prix. Mesuré, dès la première
+exécution réelle : un avertissement qui se déclenche sur une entrée correcte
+apprend au lecteur à sauter les avertissements.
+
 ### Où vit le prix
 
 **C'est votre fichier qui fait foi. Digistore24 en reçoit une copie, sous forme
@@ -190,13 +197,42 @@ durer qu'un seul appel d'API.
 🚨 **Et inscrivez au passage une MARQUE DE PROPRIÉTÉ.** `createProduct` et
 `updateProduct` acceptent tous deux `data[note]`, une note interne libre
 qu'aucun acheteur ne voit. Mettez-y une ligne lisible par une machine — l'id
-propre à votre app, la clé de produit, la langue, l'environnement — et
-conservez tout ce que le vendeur y a écrit par ailleurs. Sans elle, il n'y a pas
-de réponse honnête à « ce produit, est-ce NOUS qui l'avons créé ? », et
-l'Étape 3b en a besoin. Ne dérivez pas cet id du nom de l'app (les vendeurs
-renomment) ni du nom interne du produit (deux apps bâties sur le même modèle s'y
-télescopent) : générez-le une fois, rangez-le à côté de la liste de prix, et ne
-le régénérez jamais.
+propre à votre app et l'environnement. Sans elle, il n'y a pas de réponse
+honnête à « ce produit, est-ce NOUS qui l'avons créé ? », et l'Étape 3b en a
+besoin. Ne dérivez pas cet id du nom de l'app (les vendeurs renomment) ni du nom
+interne du produit (deux apps bâties de la même façon s'y télescopent) :
+générez-le une fois, rangez-le à côté de la liste de prix, et ne le régénérez
+jamais.
+
+🚨 **`note` conserve 47 caractères et jette le reste — en silence.** Mesuré sur
+un compte réel le 2026-09-09 : une valeur de 120 caractères est revenue coupée
+au milieu d'un mot, sans erreur, sans avertissement, et sans un mot à ce sujet
+dans la documentation de l'API. Gardez donc la marque courte — `monapp:1:<appId>:<env>`
+fait une trentaine de caractères — et **n'y mettez ni la clé de produit ni la
+langue** : elles sont déjà dans `name_intern`, que le listing renvoie à côté de
+la note.
+
+Une marque trop longue d'un caractère n'est pas une marque plus courte. Elle ne
+se parse pas, tous les produits créés par votre app se lisent comme ceux de
+quelqu'un d'autre, et votre étape de nettoyage annonce « rien à retirer » à
+partir d'une comparaison qui n'a rien trouvé parce qu'elle ne le pouvait pas.
+Fixez la longueur dans un test.
+
+⚠️ **`data[tag]` n'est pas l'échappatoire** : il revient sur le produit, et
+`updateProduct` refuse de l'écrire (HTTP 400, même mesure).
+
+Des 47 caractères découlent deux règles, et les deux portent sur la question de
+savoir à qui appartient ce champ :
+
+- **N'écrivez jamais par-dessus un texte que vous n'avez pas écrit.** Il n'y a
+  pas la place de fusionner : si la note contient autre chose, laissez-la et
+  passez. Ce produit reste alors sans marque et votre étape de nettoyage n'y
+  touchera pas — la direction sûre.
+- **Mais tenez votre propre PRÉFIXE pour vôtre, même s'il ne se parse pas.** La
+  coupe peut tomber à l'intérieur d'une marque que vous avez écrite. Sans cela,
+  une marque que vous avez un jour mal écrite est définitive : elle se lit comme
+  le texte du vendeur pour toujours et rien ne peut la réparer. Un marqueur
+  qu'on ne peut pas corriger est pire qu'un marqueur qu'on ne peut pas lire.
 
 ### Un produit par offre ET par langue — c'est ici que l'on se trompe le plus souvent
 
@@ -304,6 +340,13 @@ liste des produits est revenue sans elles, la propriété ne peut pas être
 établie, et « zéro produit à retirer » n'est alors pas une réponse : c'est un
 silence. Dites-le et arrêtez-vous. Prouver que le parcours a eu lieu n'est pas
 prouver que la comparaison a eu lieu.
+
+⚠️ **Et assurez-vous que le drapeau fonctionne encore avec une liste de prix
+VIDE.** L'endroit naturel pour un refus « rien à synchroniser » est avant tout
+échange avec Digistore24 — et alors, qui retire sa DERNIÈRE entrée garde ce
+produit dans le compte sans moyen de l'enlever. Mesuré : c'est la plus facile de
+ces erreurs, parce que tous les tests contiennent au moins un produit.
+« Rien à synchroniser » et « rien à nettoyer » sont deux questions.
 
 **Toujours derrière un drapeau explicite.** Contrairement à la création, ce
 n'est pas une question du premier passage : une clé renommée ou une coquille

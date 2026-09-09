@@ -91,6 +91,13 @@ pro:
     en: { monthly: null, yearly: null }
 ```
 
+⚠️ **Lo que COMPRUEBE este archivo tiene que leer el precio de la forma de pago,
+no de la oferta.** Una oferta que declara `paymentOptions` no tiene `priceCents`
+propio, así que un validador escrito contra la forma anterior le dice a toda
+lista de precios correcta que no tiene precio. Medido, en la primera ejecución
+real: un aviso que salta con una entrada correcta le enseña al lector a saltarse
+los avisos.
+
 ### Dónde vive el precio
 
 **Tu archivo es el original. Digistore24 recibe una copia, en forma de planes
@@ -183,13 +190,40 @@ llamada de la API.
 
 🚨 **Y escribe de paso una MARCA DE PROPIEDAD.** Tanto `createProduct` como
 `updateProduct` aceptan `data[note]`, una nota interna libre que ningún
-comprador ve. Pon ahí una línea legible por máquina — el id propio de tu app,
-la clave de producto, el idioma, el entorno — y conserva lo demás que haya
-escrito el vendedor. Sin ella no hay respuesta honesta a «¿este producto lo
-creamos NOSOTROS?», y el Paso 3b necesita una. No deduzcas ese id del nombre de
-la app (los vendedores cambian de nombre) ni del nombre interno del producto
-(dos apps construidas con la misma plantilla chocan en él): genéralo una vez,
-guárdalo junto a la lista de precios y no lo regeneres nunca.
+comprador ve. Pon ahí una línea legible por máquina — el id propio de tu app y
+el entorno. Sin ella no hay respuesta honesta a «¿este producto lo creamos
+NOSOTROS?», y el Paso 3b necesita una. No deduzcas ese id del nombre de la app
+(los vendedores cambian de nombre) ni del nombre interno del producto (dos apps
+construidas igual chocan en él): genéralo una vez, guárdalo junto a la lista de
+precios y no lo regeneres nunca.
+
+🚨 **`note` conserva 47 caracteres y descarta el resto, en silencio.** Medido
+contra una cuenta real el 2026-09-09: un valor de 120 caracteres volvió cortado
+a mitad de palabra, sin error, sin aviso y sin una palabra al respecto en la
+documentación de la API. Así que mantén la marca corta — `miapp:1:<appId>:<env>`
+son unos 30 caracteres — y **no metas en ella la clave de producto ni el
+idioma**: ya están en `name_intern`, que el listado devuelve junto a la nota.
+
+Una marca un carácter demasiado larga no es una marca más corta. No se parsea,
+todos los productos que creó tu app se leen como de otro, y tu paso de limpieza
+informa de «nada que retirar» a partir de una comparación que no encontró nada
+porque no pudo. Fija la longitud en un test.
+
+⚠️ **`data[tag]` no es la salida**: vuelve en el producto, y `updateProduct` se
+niega a escribirlo (HTTP 400, misma medición).
+
+De los 47 caracteres se siguen dos reglas, y las dos van de a quién pertenece
+ese campo:
+
+- **No escribas nunca encima de un texto que no escribiste tú.** No hay sitio
+  para fusionar, así que si la nota contiene otra cosa, déjala y sigue. Ese
+  producto se queda sin marcar y tu paso de limpieza no lo tocará — la
+  dirección segura.
+- **Pero da por tuyo tu propio PREFIJO aunque no se parsee.** El corte puede
+  caer dentro de una marca que escribiste tú. Sin esto, una marca que alguna vez
+  te salió mal es permanente: se lee como texto del vendedor para siempre y no
+  hay forma de repararla. Un marcador que no puedes arreglar es peor que uno que
+  no puedes leer.
 
 ### Un producto por oferta Y por idioma — aquí es donde la gente se equivoca
 
@@ -294,6 +328,13 @@ precios:
 de productos volvió sin ellas, la propiedad no se puede establecer, y «cero
 productos que retirar» no es entonces una respuesta: es silencio. Dilo y para.
 Demostrar que el recorrido se hizo no es demostrar que la comparación se hizo.
+
+⚠️ **Y asegúrate de que el marcador siga funcionando con la lista de precios
+VACÍA.** El sitio natural para un «no hay nada que sincronizar» es antes de
+hablar con Digistore24 — y entonces quien retire su ÚLTIMA entrada se queda el
+producto en la cuenta sin forma de retirarlo. Medido: es el más fácil de estos
+errores, porque todos los tests tienen al menos un producto dentro. «Nada que
+sincronizar» y «nada que limpiar» son dos preguntas.
 
 **Siempre detrás de un marcador explícito.** A diferencia de crear, esta no es
 una pregunta de la primera ejecución: una clave renombrada o una errata en la

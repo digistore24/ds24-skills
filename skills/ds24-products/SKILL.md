@@ -86,6 +86,12 @@ pro:
     en: { monthly: null, yearly: null }
 ```
 
+⚠️ **Whatever CHECKS this file has to read the price off the way to pay, not
+off the offer.** An offer that declares `paymentOptions` has no `priceCents` of
+its own, so a validator written against the older shape tells every correctly
+written price list that it has no price. Measured, on the first real run: a
+warning that fires on correct input teaches the reader to skip warnings.
+
 ### Where the price lives
 
 **Your file authors it. Digistore24 gets a copy, as payment plans.**
@@ -166,12 +172,36 @@ window in which that is true should be one API call wide.
 
 🚨 **And write an OWNERSHIP MARK while you are there.** `createProduct` and
 `updateProduct` both take `data[note]`, a free internal note no buyer sees. Put
-one machine-readable line in it — your app's own id, the product key, the
-language, the environment — and keep whatever else the vendor wrote. Without it
-there is no honest answer to "did WE create this product?", and Step 3b needs
-one. Do not derive that id from the app's name (vendors rename) or from the
-internal product name (two apps built from the same template collide on it):
+one machine-readable line in it — your app's own id and the environment.
+Without it there is no honest answer to "did WE create this product?", and
+Step 3b needs one. Do not derive that id from the app's name (vendors rename)
+or from the internal product name (two apps built the same way collide on it):
 generate it once, store it beside the price list, and never regenerate it.
+
+🚨 **`note` keeps 47 characters and drops the rest — silently.** Measured
+against a live account on 2026-09-09: a 120-character value came back cut
+mid-word, with no error, no warning and nothing about it in the API
+documentation. So keep the mark short — `myapp:1:<appId>:<env>` is about
+30 characters — and **do not put the product key or the language in it**: they
+are already in `name_intern`, which the listing returns beside the note.
+
+A mark one character too long is not a shorter mark. It does not parse, every
+product your app created reads as somebody else's, and your cleanup step
+reports "nothing to remove" out of a comparison that found nothing because it
+could not. Assert the length in a test.
+
+⚠️ **`data[tag]` is not the way out** — it comes back on a product, and
+`updateProduct` refuses to write it (HTTP 400, same measurement).
+
+Two rules follow from 47 characters, and both are about whose field this is:
+
+- **Never write over text you did not write.** There is no room to merge, so if
+  the note holds something else, leave it and move on. That product then stays
+  unmarked and your cleanup step will not touch it — the safe direction.
+- **But treat your own PREFIX as yours even when it does not parse.** The cut
+  can land inside a mark you wrote. Without this, a mark you once got wrong is
+  permanent: it reads as the vendor's text for ever and can never be repaired.
+  A marker you cannot fix is worse than one you cannot read.
 
 ### One product per offer AND language — this is the one people get wrong
 
@@ -272,6 +302,13 @@ Proving the walk ran is not proving the comparison did.
 question: a renamed key or a typo in the price list would otherwise delete a
 live product on an ordinary sync. List what would go, change nothing, and let
 the user ask for it.
+
+⚠️ **And make sure the flag still works when the price list is EMPTY.** The
+natural place to put a "nothing to sync" refusal is before anything talks to
+Digistore24 — and then whoever removes their LAST entry keeps that product in
+the account with no way to remove it. Measured: it is the easiest of these
+mistakes to make, because every test has at least one product in it. "Nothing
+to sync" and "nothing to clean up" are two questions.
 
 ## Step 4 — register the IPN connection
 
