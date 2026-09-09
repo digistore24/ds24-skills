@@ -190,8 +190,40 @@ product your app created reads as somebody else's, and your cleanup step
 reports "nothing to remove" out of a comparison that found nothing because it
 could not. Assert the length in a test.
 
-⚠️ **`data[tag]` is not the way out** — it comes back on a product, and
-`updateProduct` refuses to write it (HTTP 400, same measurement).
+### The second marker: `data[tag]`
+
+Beside the note there is a **tag** field, and it answers a coarser question:
+not "which app made this" but "was this made by an app at all". Set it to a
+name that identifies your tooling and the vendor can filter their backoffice by
+it.
+
+```
+data[tag] = ds24-appkit
+```
+
+🚨 **Tags are a comma-separated LIST and the field is written whole.** So
+adding one is read-modify-write, always:
+
+1. read the product's current `tag` (`getProduct`, or the listing you already
+   have — it comes back there);
+2. if yours is already in the list, write nothing;
+3. otherwise append it after a comma and send the **whole** list back with
+   `updateProduct`.
+
+Writing just your own tag deletes every tag the vendor put there. On
+`createProduct` there is nothing to read, so your tag is the whole value.
+
+⚠️ **And know this about `data` in general: it is validated against a strict
+allowlist.** A key Digistore24 does not know is an ERROR — the whole call is
+refused with "ungültiger Array-Schlüssel", not silently ignored. So a field that
+is newer than the account's API breaks every call that carries it. If you write
+against a field that is being rolled out, send it, catch the refusal, and repeat
+the call once without it.
+
+🚨 **And do NOT let your cleanup step read the tag.** Every app built the same
+way carries the same one — a removal decided on it would let one app delete
+another's products. Ownership stays the fine-grained mark in the note, the one
+carrying your app's own id.
 
 Two rules follow from 47 characters, and both are about whose field this is:
 

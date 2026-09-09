@@ -209,8 +209,39 @@ todos los productos que creó tu app se leen como de otro, y tu paso de limpieza
 informa de «nada que retirar» a partir de una comparación que no encontró nada
 porque no pudo. Fija la longitud en un test.
 
-⚠️ **`data[tag]` no es la salida**: vuelve en el producto, y `updateProduct` se
-niega a escribirlo (HTTP 400, misma medición).
+### La segunda marca: `data[tag]`
+
+Junto a la nota hay un campo **tag**, y responde a una pregunta más gruesa: no
+«qué app hizo esto» sino «¿lo hizo una app siquiera?». Ponle un nombre que
+identifique tu herramienta y el vendedor podrá filtrar su backoffice por él.
+
+```
+data[tag] = ds24-appkit
+```
+
+🚨 **Los tags son una LISTA separada por comas y el campo se escribe entero.**
+Así que añadir uno es siempre leer-modificar-escribir:
+
+1. lee el `tag` actual del producto (`getProduct`, o el listado que ya tienes:
+   ahí también viene);
+2. si el tuyo ya está en la lista, no escribas nada;
+3. si no, añádelo detrás de una coma y manda la lista **entera** de vuelta con
+   `updateProduct`.
+
+Escribir solo tu propio tag borra todos los que el vendedor puso ahí. En
+`createProduct` no hay nada que leer, así que tu tag es el valor completo.
+
+⚠️ **Y ten esto presente sobre `data` en general: se valida contra una lista
+blanca estricta.** Una clave que Digistore24 no conoce es un ERROR — la llamada
+entera se rechaza con «ungültiger Array-Schlüssel», no se ignora en silencio.
+Así que un campo más nuevo que la API de la cuenta rompe todas las llamadas que
+lo lleven. Si escribes contra un campo que se está desplegando: mándalo, captura
+el rechazo y repite la llamada una vez sin él.
+
+🚨 **Y NO dejes que tu paso de limpieza lea el tag.** Todas las apps
+construidas igual llevan el mismo — una retirada decidida sobre él dejaría que
+una app borrase los productos de otra. La propiedad se queda en la marca fina
+de la nota, la que lleva el id propio de tu app.
 
 De los 47 caracteres se siguen dos reglas, y las dos van de a quién pertenece
 ese campo:

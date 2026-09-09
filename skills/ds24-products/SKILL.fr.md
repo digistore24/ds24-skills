@@ -218,8 +218,40 @@ quelqu'un d'autre, et votre étape de nettoyage annonce « rien à retirer �
 partir d'une comparaison qui n'a rien trouvé parce qu'elle ne le pouvait pas.
 Fixez la longueur dans un test.
 
-⚠️ **`data[tag]` n'est pas l'échappatoire** : il revient sur le produit, et
-`updateProduct` refuse de l'écrire (HTTP 400, même mesure).
+### La deuxième marque : `data[tag]`
+
+À côté de la note se trouve un champ **tag**, et il répond à une question plus
+grossière : non pas « quelle app a fait ceci » mais « est-ce seulement une app
+qui l'a fait ». Mettez-y un nom qui identifie votre outillage et le vendeur
+pourra filtrer son backoffice dessus.
+
+```
+data[tag] = ds24-appkit
+```
+
+🚨 **Les tags sont une LISTE séparée par des virgules et le champ s'écrit en
+entier.** En ajouter un est donc toujours un lire-modifier-écrire :
+
+1. lisez le `tag` actuel du produit (`getProduct`, ou le listing que vous avez
+   déjà : il y figure aussi) ;
+2. si le vôtre est déjà dans la liste, n'écrivez rien ;
+3. sinon, ajoutez-le après une virgule et renvoyez la liste **entière** avec
+   `updateProduct`.
+
+N'écrire que votre propre tag efface tous ceux que le vendeur y avait mis. Sur
+`createProduct` il n'y a rien à lire : votre tag est la valeur entière.
+
+⚠️ **Et sachez ceci de `data` en général : il est validé contre une liste blanche
+stricte.** Une clé que Digistore24 ne connaît pas est une ERREUR — l'appel
+entier est refusé avec « ungültiger Array-Schlüssel », et non ignoré en silence.
+Un champ plus récent que l'API du compte casse donc tous les appels qui le
+portent. Si vous écrivez contre un champ en cours de déploiement : envoyez-le,
+attrapez le refus, et répétez l'appel une fois sans lui.
+
+🚨 **Et ne laissez PAS votre étape de nettoyage lire le tag.** Toutes les apps
+bâties de la même façon portent le même — un retrait décidé dessus laisserait
+une app supprimer les produits d'une autre. La propriété reste la marque fine
+de la note, celle qui porte l'id propre à votre app.
 
 Des 47 caractères découlent deux règles, et les deux portent sur la question de
 savoir à qui appartient ce champ :
