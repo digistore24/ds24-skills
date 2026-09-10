@@ -161,6 +161,16 @@ invisibles:
   completo, sus rechazos y lo que una coincidencia de correo no puede autorizar
   están en el Paso 2 de **`ds24-checkout`** — léelo antes de escribir esta
   parte, porque aquí cada fallo tiene el aspecto de un endpoint que funciona.
+- 🚨 **Ese orden resuelve QUIÉN pagó, nunca QUÉ compró.** `tracking[custom]` está
+  autenticado como identificador; la clave de producto que también pusiste ahí es
+  una *afirmación sobre la venta*, y la venta es lo que dice `product_id`.
+  Compara las dos y deja ganar al producto **cobrado** — una discrepancia es una
+  línea de error, no una decisión silenciosa. Conceder solo por la clave nombrada
+  significa que una sola petición decide qué plan recibe alguien por el dinero
+  que realmente pagó. Cuando el payload nombra un `product_id` que tu registro no
+  conoce, cree al nombre: un producto sin sincronizar y una compra de fuera de tu
+  registro tienen ese mismo aspecto, y una compra sin `custom` alguno todavía
+  tiene que resolverse solo por `product_id`.
 
 ## Paso 5 — demuéstralo
 

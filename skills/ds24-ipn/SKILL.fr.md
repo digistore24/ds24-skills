@@ -168,6 +168,16 @@ relecture :
   ne doit pas autoriser sont l'Étape 2 de **`ds24-checkout`** — lisez-la avant
   d'écrire cette partie, car ici chaque échec a l'air d'un endpoint qui
   fonctionne.
+- 🚨 **Cet ordre règle QUI a payé, jamais CE QU'IL a acheté.** `tracking[custom]`
+  est authentifié en tant qu'identifiant ; la clé de produit que vous y avez mise
+  aussi est une *affirmation sur la vente*, et la vente est ce que dit
+  `product_id`. Confrontez les deux et laissez gagner le produit **facturé** —
+  un écart est une ligne d'erreur, pas un choix silencieux. Accorder sur la seule
+  clé nommée revient à laisser une requête décider quel plan quelqu'un obtient
+  pour l'argent qu'il a réellement versé. Si le payload nomme un `product_id` que
+  votre registre ne connaît pas, croyez le nom : un produit non synchronisé et un
+  achat venu d'ailleurs se ressemblent, et un achat sans aucun `custom` doit
+  encore se résoudre par `product_id` seul.
 
 ## Étape 5 — prouvez-le
 

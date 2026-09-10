@@ -147,6 +147,16 @@ Write these down in the app's own notes, because they are invisible in review:
   The full order, its refusals and what may not be authorised by an e-mail match
   are Step 2 of **`ds24-checkout`** — read it before writing this part, because
   every failure here looks like a working endpoint.
+- 🚨 **That order settles WHO paid, never WHAT they bought.** `tracking[custom]`
+  is authenticated as an identifier; the product key you also put in there is
+  a *claim about the sale*, and the sale is what `product_id` says it was. Hold
+  the two against each other and let the **charged** product win — a mismatch is
+  an error line, not a silent choice. Granting on the named key alone means one
+  request decides which plan somebody gets for the money they actually paid.
+  Where the payload names a `product_id` your registry does not know, believe the
+  name: an unsynced product and a purchase from outside your registry both look
+  like that, and a purchase with no `custom` at all still has to resolve through
+  `product_id` alone.
 
 ## Step 5 — prove it
 
