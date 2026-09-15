@@ -272,8 +272,11 @@ purchase**. There are two ways to unlock one, and they suit different places:
   `get_param_name` and `expires_at`. Append
   `?<get_param_name>=<testpay_key>` to the buy URL (the NAME comes from the
   response — never hardcode it) and the checkout opens in test-payment mode,
-  approved or not. Sending `do_recreate=1` rotates the key: a new one is
-  issued and every old copy stops working.
+  approved or not. **The "Testzahlung" option shows only for the vendor who
+  is signed in at Digistore24 in that same browser** — say so before they
+  click, or the page answers *"nur bei Ihren eigenen Produkten — und nur wenn
+  Sie eingeloggt sind"* (measured 2026-09-15). Sending `do_recreate=1` rotates
+  the key: a new one is issued and every old copy stops working.
 
 Four guardrails, all load-bearing:
 

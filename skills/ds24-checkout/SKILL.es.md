@@ -296,8 +296,12 @@ encaja en un sitio distinto:
   `get_param_name` y `expires_at`. Añade `?<get_param_name>=<testpay_key>` a la
   URL de compra (el NOMBRE sale de la respuesta; nunca lo escribas fijo en el
   código) y el checkout se abre en modo de pago de prueba, esté aprobado o no.
-  Enviar `do_recreate=1` rota la clave: se genera una nueva y todas las copias
-  anteriores dejan de funcionar.
+  **La opción «Testzahlung» (pago de prueba) solo aparece para el vendedor que
+  ha iniciado sesión en Digistore24 en ese mismo navegador** — dilo antes de
+  que haga clic, o la página responde «nur bei Ihren eigenen Produkten — und
+  nur wenn Sie eingeloggt sind» (medido el 2026-09-15). Enviar `do_recreate=1`
+  rota la clave: se genera una nueva y todas las copias anteriores dejan de
+  funcionar.
 
 Cuatro salvaguardas, todas indispensables:
 
