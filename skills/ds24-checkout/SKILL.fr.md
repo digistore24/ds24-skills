@@ -306,9 +306,12 @@ Un produit pas encore approuvé sur la marketplace ne peut être acheté qu'en
   `get_param_name` et `expires_at`. Ajoutez
   `?<get_param_name>=<testpay_key>` à l'URL d'achat (le NOM vient de la
   réponse — ne le codez jamais en dur) et le checkout s'ouvre en mode paiement
-  de test, produit approuvé ou non. Envoyer `do_recreate=1` fait tourner la
-  clé : une nouvelle est émise et toutes les anciennes copies cessent de
-  fonctionner.
+  de test, produit approuvé ou non. **L'option « Testzahlung » (paiement de
+  test) n'apparaît que pour le vendeur connecté à Digistore24 dans ce même
+  navigateur** — dites-le avant le clic, sinon la page répond « nur bei Ihren
+  eigenen Produkten — und nur wenn Sie eingeloggt sind » (mesuré le
+  2026-09-15). Envoyer `do_recreate=1` fait tourner la clé : une nouvelle est
+  émise et toutes les anciennes copies cessent de fonctionner.
 
 Quatre garde-fous, tous indispensables :
 
