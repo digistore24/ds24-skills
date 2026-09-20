@@ -195,11 +195,25 @@ could not. Assert the length in a test.
 Beside the note there is a **tag** field, and it answers a coarser question:
 not "which app made this" but "was this made by an app at all". Set it to a
 name that identifies your tooling and the vendor can filter their backoffice by
-it.
+it. **And if you keep one product set per environment (above), give each set
+its own tag** — a filter is only worth typing if it separates the live products
+from the ones a sync made while somebody was testing:
 
 ```
-data[tag] = ds24-appkit
+data[tag] = ds24-skills          # the live set
+data[tag] = ds24-skills-test     # staging
+data[tag] = ds24-skills-dev      # development
 ```
+
+🚨 **Read that value FROM the environment, once, before the first call, and
+give the function no default.** The default would be the live tag, and the day
+a call site forgets the argument it marks a test product as live in the
+vendor's filter — invisible to every test that passes its own value in. An
+environment you do not recognise is a crash, not a fallback.
+
+And **only ever append**: a product that was synced under one environment and
+later under another keeps both tags. Removing one is not worth the risk, since
+the tag proves no ownership anyway (below).
 
 🚨 **Tags are a comma-separated LIST and the field is written whole.** So
 adding one is read-modify-write, always:

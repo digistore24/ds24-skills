@@ -223,11 +223,28 @@ Fixez la longueur dans un test.
 À côté de la note se trouve un champ **tag**, et il répond à une question plus
 grossière : non pas « quelle app a fait ceci » mais « est-ce seulement une app
 qui l'a fait ». Mettez-y un nom qui identifie votre outillage et le vendeur
-pourra filtrer son backoffice dessus.
+pourra filtrer son backoffice dessus. **Et si vous tenez un jeu de produits par
+environnement (ci-dessus), donnez à chaque jeu son propre tag** : un filtre ne
+vaut la peine d'être tapé que s'il sépare les produits en production de ceux
+qu'une synchronisation a créés pendant que quelqu'un testait :
 
 ```
-data[tag] = ds24-appkit
+data[tag] = ds24-skills          # le jeu en production
+data[tag] = ds24-skills-test     # staging
+data[tag] = ds24-skills-dev      # développement
 ```
+
+🚨 **Lisez cette valeur DEPUIS l'environnement, une seule fois, avant le premier
+appel, et ne donnez aucune valeur par défaut à la fonction.** La valeur par
+défaut serait le tag de production, et le jour où un appel oublie l'argument il
+marque un produit de test comme étant en production dans le filtre du vendeur —
+invisible pour tout test qui passe sa propre valeur. Un environnement que vous
+ne reconnaissez pas est une erreur, pas un repli.
+
+Et **ajoutez seulement, ne retirez jamais** : un produit synchronisé sous un
+environnement puis sous un autre conserve les deux tags. En retirer un ne vaut
+pas le risque, puisque le tag ne prouve de toute façon aucune propriété
+(ci-dessous).
 
 🚨 **Les tags sont une LISTE séparée par des virgules et le champ s'écrit en
 entier.** En ajouter un est donc toujours un lire-modifier-écrire :

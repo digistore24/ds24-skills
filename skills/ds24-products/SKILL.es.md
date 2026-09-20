@@ -214,10 +214,26 @@ porque no pudo. Fija la longitud en un test.
 Junto a la nota hay un campo **tag**, y responde a una pregunta más gruesa: no
 «qué app hizo esto» sino «¿lo hizo una app siquiera?». Ponle un nombre que
 identifique tu herramienta y el vendedor podrá filtrar su backoffice por él.
+**Y si mantienes un conjunto de productos por entorno (arriba), dale a cada
+conjunto su propio tag**: un filtro solo merece escribirse si separa los
+productos en vivo de los que creó un sync mientras alguien probaba:
 
 ```
-data[tag] = ds24-appkit
+data[tag] = ds24-skills          # el conjunto en vivo
+data[tag] = ds24-skills-test     # staging
+data[tag] = ds24-skills-dev      # desarrollo
 ```
+
+🚨 **Lee ese valor DEL entorno, una sola vez, antes de la primera llamada, y no
+le des ningún valor por defecto a la función.** El valor por defecto sería el
+tag en vivo, y el día que una llamada olvide el argumento marcará un producto
+de prueba como en vivo en el filtro del vendedor — invisible para cualquier test
+que pase su propio valor. Un entorno que no reconoces es un error, no un
+respaldo.
+
+Y **solo añade, nunca quites**: un producto sincronizado bajo un entorno y más
+tarde bajo otro conserva ambos tags. Retirar uno no compensa el riesgo, porque
+el tag no demuestra propiedad de todas formas (abajo).
 
 🚨 **Los tags son una LISTA separada por comas y el campo se escribe entero.**
 Así que añadir uno es siempre leer-modificar-escribir:
