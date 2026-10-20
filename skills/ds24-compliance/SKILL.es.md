@@ -15,6 +15,18 @@ de ahí sé útil.
 El disparador no es el tamaño de la app. Es **cobrar a personas de la UE** — y
 para eso, precisamente, sirve una integración con Digistore24.
 
+**Y cada texto legal que escribas lo dice por sí mismo.** Quien publica este
+pack no presta asesoramiento jurídico, no puede ni quiere hacerlo — y una
+política de privacidad redactada que se lee como definitiva afirma justo eso. Por
+tanto, cada aviso legal, política de privacidad, condiciones o información sobre
+el desistimiento que escribas empieza, antes del primer encabezado y en el idioma
+de la página, con una línea visible: **Borrador para revisión jurídica** (en
+alemán: *Entwurf zur Vorlage bei einer Rechtsberatung*) — *redactado el <fecha>
+por software a partir del inventario de datos de esta app, aún no revisado por un
+abogado. No es asesoramiento jurídico.* Muéstrala en la página, no solo en el
+archivo. **Solo el usuario retira esa línea, después de que un abogado haya leído
+el texto — nunca tú, y nunca porque una comprobación haya salido limpia.**
+
 ## Paso 0 — ¿qué hay ya?
 
 Antes de escribir nada, mira. Busca en el proyecto un aviso legal, una política
@@ -325,9 +337,10 @@ Deja en el repositorio:
 1. el inventario del Paso 1, como un archivo que se actualiza con cada tabla
    nueva
 2. el aviso legal, la política de privacidad y las condiciones como páginas
-   reales
+   reales — cada una marcada como *Borrador para revisión jurídica* hasta que
+   un abogado la haya leído
 3. una nota fechada con lo que se comprobó, lo que se decidió y lo que sigue
-   abierto
+   abierto — marcada de la misma manera
 
 Esa última es la diferencia entre «lo pensamos» y poder demostrarlo.
 

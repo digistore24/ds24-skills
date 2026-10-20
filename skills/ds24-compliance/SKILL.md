@@ -9,6 +9,17 @@ This is preparation, not legal advice. It gets the obvious things right and
 names the ones a lawyer should look at. Say that once, at the start, and then be
 useful.
 
+**And every legal text you write says so itself.** Whoever publishes this pack
+gives no legal advice, may not and does not want to — and a drafted privacy
+policy that reads like a finished one claims exactly that. So every imprint,
+privacy policy, terms or withdrawal notice you write opens, before its first
+heading and in the page's own language, with a visible line: **Draft for legal
+review** (German: *Entwurf zur Vorlage bei einer Rechtsberatung*) — *drafted on
+<date> by software from this app's data inventory, not yet reviewed by a lawyer.
+Not legal advice.* Render it on the page, not only in the file. **Only the user
+removes that line, after a lawyer has read the text — never you, and never
+because a check came back clean.**
+
 The trigger is not size. It is **taking money from people in the EU**, which is
 what a Digistore24 integration is for.
 
@@ -288,8 +299,10 @@ Two properties, and the second is the one that gets missed:
 Leave behind, in the repository:
 
 1. the inventory from Step 1, as a file that gets updated with every new table
-2. the imprint, privacy policy and terms as real pages
+2. the imprint, privacy policy and terms as real pages — each labelled *Draft
+   for legal review* until a lawyer has read it
 3. a dated note of what was checked, what was decided and what is still open
+   — labelled the same way
 
 That last one is the difference between "we thought about it" and being able to
 show it.

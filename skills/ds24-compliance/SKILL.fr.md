@@ -16,6 +16,19 @@ Le déclencheur n'est pas la taille de l'app : c'est le fait d'**encaisser de
 l'argent auprès de personnes situées dans l'UE** — et c'est précisément à cela
 que sert une intégration Digistore24.
 
+**Et chaque texte juridique que vous rédigez le dit lui-même.** Celui qui publie
+ce pack ne donne pas de conseil juridique, ne le peut pas et ne le veut pas — et
+une politique de confidentialité rédigée qui se lit comme définitive affirme
+exactement cela. Chaque mention légale, politique de confidentialité, conditions
+ou information sur la rétractation que vous écrivez commence donc, avant son
+premier titre et dans la langue de la page, par une ligne visible : **Projet à
+soumettre à un conseil juridique** (en allemand : *Entwurf zur Vorlage bei einer
+Rechtsberatung*) — *rédigée le <date> par un logiciel à partir de l'inventaire
+des données de cette app, pas encore vérifiée par un avocat. Ceci n'est pas un
+conseil juridique.* Affichez-la sur la page, pas seulement dans le fichier.
+**Seul l'utilisateur retire cette ligne, après qu'un avocat a lu le texte —
+jamais vous, et jamais parce qu'une vérification est revenue propre.**
+
 ## Étape 0 — qu'y a-t-il déjà ?
 
 Regardez avant d'écrire quoi que ce soit. Cherchez dans le projet des mentions
@@ -343,9 +356,10 @@ Laissez dans le dépôt :
 1. l'inventaire de l'étape 1, sous forme de fichier mis à jour à chaque
    nouvelle table
 2. les mentions légales, la politique de confidentialité et les conditions, en
-   vraies pages
+   vraies pages — chacune signalée comme *Projet à soumettre à un conseil
+   juridique* jusqu'à ce qu'un avocat l'ait lu
 3. une note datée : ce qui a été vérifié, ce qui a été décidé, ce qui reste
-   ouvert
+   ouvert — signalée de la même manière
 
 Cette dernière fait la différence entre « nous y avons réfléchi » et pouvoir le
 montrer.
